@@ -1,8 +1,10 @@
 <template>
   <div class="restocking">
     <div class="page-header">
-      <h2>{{ t('restocking.title') }}</h2>
-      <p>{{ t('restocking.description') }}</p>
+      <div>
+        <h1>{{ t('restocking.title') }}</h1>
+        <p>{{ t('restocking.description') }}</p>
+      </div>
     </div>
 
     <div v-if="initializing" class="loading">{{ t('common.loading') }}</div>
@@ -55,22 +57,22 @@
         </div>
       </div>
 
-      <div v-if="orderResult" class="success-banner" role="status">
+      <div v-if="orderResult" class="alert alert--success" role="status">
         <span>{{ t('restocking.orderSuccess', { orderNumber: orderResult.order_number, date: formatDate(orderResult.expected_delivery) }) }}</span>
         <router-link to="/orders" class="banner-link">{{ t('restocking.viewInOrders') }}</router-link>
       </div>
       <div v-if="orderError" class="error" role="alert">{{ orderError }}</div>
       <div v-if="loadError" class="error" role="alert">{{ loadError }}</div>
 
-      <div class="card">
+      <div class="card card--flush">
         <div class="card-header">
-          <h3 class="card-title">
+          <h2 class="card-title">
             {{ t('restocking.recommendations') }}
             <span v-if="refreshing || isStale" class="refreshing">{{ t('restocking.refreshing') }}</span>
-          </h3>
+          </h2>
           <button
             type="button"
-            class="primary-button"
+            class="btn btn--primary"
             :disabled="items.length === 0 || submitting || refreshing || isStale || orderResult !== null"
             @click="placeOrder"
           >
@@ -83,15 +85,15 @@
           <table>
             <thead>
               <tr>
-                <th>{{ t('restocking.table.sku') }}</th>
-                <th>{{ t('restocking.table.item') }}</th>
-                <th>{{ t('restocking.table.trend') }}</th>
-                <th class="num">{{ t('restocking.table.forecast') }}</th>
-                <th class="num">{{ t('restocking.table.recommended') }}</th>
-                <th class="num">{{ t('restocking.table.unitCost') }}</th>
-                <th class="num">{{ t('restocking.table.lineTotal') }}</th>
-                <th>{{ t('restocking.table.supplier') }}</th>
-                <th class="num">{{ t('restocking.table.leadTime') }}</th>
+                <th scope="col">{{ t('restocking.table.sku') }}</th>
+                <th scope="col">{{ t('restocking.table.item') }}</th>
+                <th scope="col">{{ t('restocking.table.trend') }}</th>
+                <th scope="col" class="num">{{ t('restocking.table.forecast') }}</th>
+                <th scope="col" class="num">{{ t('restocking.table.recommended') }}</th>
+                <th scope="col" class="num">{{ t('restocking.table.unitCost') }}</th>
+                <th scope="col" class="num">{{ t('restocking.table.lineTotal') }}</th>
+                <th scope="col">{{ t('restocking.table.supplier') }}</th>
+                <th scope="col" class="num">{{ t('restocking.table.leadTime') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -298,111 +300,71 @@ export default {
 .slider-block {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: var(--space-3);
 }
 
 .slider-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
+  gap: var(--space-2);
 }
 
 .slider-label {
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .slider-value {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
 }
 
 .budget-slider {
-  width: 100%;
-  accent-color: #0f172a;
+  inline-size: 100%;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
 
 .slider-bounds {
   display: flex;
   justify-content: space-between;
-  font-size: 0.813rem;
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
 }
 
 .num {
-  text-align: right;
   white-space: nowrap;
 }
 
 .partial-tag {
   display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  background: #fed7aa;
-  color: #92400e;
-  font-size: 0.688rem;
+  margin-inline-start: var(--space-2);
+  padding: 0.125rem var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-soft);
+  color: var(--color-on-warning-soft);
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
 
 .refreshing {
-  margin-left: 0.75rem;
-  font-size: 0.813rem;
+  margin-inline-start: var(--space-3);
+  font-size: var(--text-sm);
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-subtle);
 }
 
-.primary-button {
-  background: #0f172a;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.primary-button:hover:not(:disabled) {
-  background: #1e293b;
-}
-
-.primary-button:disabled {
-  background: #cbd5e1;
-  cursor: not-allowed;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: #64748b;
-  font-size: 0.938rem;
-}
-
-.success-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  background: #d1fae5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.25rem;
-  font-size: 0.938rem;
-}
-
-.banner-link {
-  color: #065f46;
+.alert .banner-link {
+  color: inherit;
   font-weight: 600;
   text-decoration: underline;
   white-space: nowrap;

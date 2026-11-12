@@ -1,8 +1,10 @@
 <template>
   <div class="orders">
     <div class="page-header">
-      <h2>{{ t('orders.title') }}</h2>
-      <p>{{ t('orders.description') }}</p>
+      <div>
+        <h1>{{ t('orders.title') }}</h1>
+        <p>{{ t('orders.description') }}</p>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
@@ -27,38 +29,38 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card card--flush">
         <div class="card-header">
-          <h3 class="card-title">{{ t('orders.submittedOrders.title') }} ({{ restockingOrders.length }})</h3>
+          <h2 class="card-title">{{ t('orders.submittedOrders.title') }} ({{ restockingOrders.length }})</h2>
         </div>
         <div v-if="restockingError" class="error">{{ restockingError }}</div>
-        <div v-else-if="restockingOrders.length === 0" class="restocking-empty">
+        <div v-else-if="restockingOrders.length === 0" class="empty-state">
           {{ t('orders.submittedOrders.empty') }}
-          <router-link to="/restocking">{{ t('orders.submittedOrders.goToRestocking') }}</router-link>
+          <router-link to="/restocking" class="empty-link">{{ t('orders.submittedOrders.goToRestocking') }}</router-link>
         </div>
         <div v-else class="table-container">
           <table class="orders-table">
             <thead>
               <tr>
-                <th class="col-order-number">{{ t('orders.submittedOrders.orderNumber') }}</th>
-                <th class="col-date">{{ t('orders.submittedOrders.submitted') }}</th>
-                <th class="col-items">{{ t('orders.submittedOrders.items') }}</th>
-                <th class="col-value">{{ t('orders.submittedOrders.total') }}</th>
-                <th class="col-date">{{ t('orders.submittedOrders.leadTime') }}</th>
-                <th class="col-date">{{ t('orders.submittedOrders.expectedDelivery') }}</th>
-                <th class="col-status">{{ t('orders.submittedOrders.status') }}</th>
+                <th scope="col" class="col-order-number">{{ t('orders.submittedOrders.orderNumber') }}</th>
+                <th scope="col" class="col-date">{{ t('orders.submittedOrders.submitted') }}</th>
+                <th scope="col" class="col-items">{{ t('orders.submittedOrders.items') }}</th>
+                <th scope="col" class="col-value num">{{ t('orders.submittedOrders.total') }}</th>
+                <th scope="col" class="col-date">{{ t('orders.submittedOrders.leadTime') }}</th>
+                <th scope="col" class="col-date">{{ t('orders.submittedOrders.expectedDelivery') }}</th>
+                <th scope="col" class="col-status">{{ t('orders.submittedOrders.status') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="order in restockingOrders" :key="order.id">
                 <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
-                <td class="col-date">{{ formatDate(order.submitted_date) }}</td>
+                <td class="col-date"><time :datetime="order.submitted_date">{{ formatDate(order.submitted_date) }}</time></td>
                 <td class="col-items">
                   <details class="items-details">
                     <summary class="items-summary">
                       {{ t('orders.itemsCount', { count: order.items.length }) }}
                     </summary>
-                    <div class="items-dropdown">
+                    <div class="items-list">
                       <div v-for="item in order.items" :key="item.sku" class="item-entry">
                         <span class="item-name">{{ translateProductName(item.item_name) }}</span>
                         <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ formatCurrencyWithDecimals(item.unit_cost, currentCurrency, 2) }}</span>
@@ -67,9 +69,9 @@
                     </div>
                   </details>
                 </td>
-                <td class="col-value"><strong>{{ formatCurrency(order.total_cost, currentCurrency) }}</strong></td>
+                <td class="col-value num"><strong>{{ formatCurrency(order.total_cost, currentCurrency) }}</strong></td>
                 <td class="col-date">{{ t('orders.submittedOrders.days', { count: order.lead_time_days }) }}</td>
-                <td class="col-date">{{ formatDate(order.expected_delivery) }}</td>
+                <td class="col-date"><time :datetime="order.expected_delivery">{{ formatDate(order.expected_delivery) }}</time></td>
                 <td class="col-status">
                   <span class="badge info">{{ t('orders.submittedOrders.statusSubmitted') }}</span>
                 </td>
@@ -79,21 +81,21 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card card--flush">
         <div class="card-header">
-          <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
+          <h2 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h2>
         </div>
         <div class="table-container">
           <table class="orders-table">
             <thead>
               <tr>
-                <th class="col-order-number">{{ t('orders.table.orderNumber') }}</th>
-                <th class="col-customer">{{ t('orders.table.customer') }}</th>
-                <th class="col-items">{{ t('orders.table.items') }}</th>
-                <th class="col-status">{{ t('orders.table.status') }}</th>
-                <th class="col-date">{{ t('orders.table.orderDate') }}</th>
-                <th class="col-date">{{ t('orders.table.expectedDelivery') }}</th>
-                <th class="col-value">{{ t('orders.table.totalValue') }}</th>
+                <th scope="col" class="col-order-number">{{ t('orders.table.orderNumber') }}</th>
+                <th scope="col" class="col-customer">{{ t('orders.table.customer') }}</th>
+                <th scope="col" class="col-items">{{ t('orders.table.items') }}</th>
+                <th scope="col" class="col-status">{{ t('orders.table.status') }}</th>
+                <th scope="col" class="col-date">{{ t('orders.table.orderDate') }}</th>
+                <th scope="col" class="col-date">{{ t('orders.table.expectedDelivery') }}</th>
+                <th scope="col" class="col-value num">{{ t('orders.table.totalValue') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -105,8 +107,9 @@
                     <summary class="items-summary">
                       {{ t('orders.itemsCount', { count: order.items.length }) }}
                     </summary>
-                    <div class="items-dropdown">
-                      <div v-for="(item, idx) in order.items" :key="idx" class="item-entry">
+                    <div class="items-list">
+                      <!-- An order can list the same SKU twice, so sku alone is not unique; position disambiguates -->
+                      <div v-for="(item, idx) in order.items" :key="`${item.sku}-${idx}`" class="item-entry">
                         <span class="item-name">{{ translateProductName(item.name) }}</span>
                         <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ currencySymbol }}{{ item.unit_price }}</span>
                       </div>
@@ -118,9 +121,9 @@
                     {{ t(`status.${order.status.toLowerCase()}`) }}
                   </span>
                 </td>
-                <td class="col-date">{{ formatDate(order.order_date) }}</td>
-                <td class="col-date">{{ formatDate(order.expected_delivery) }}</td>
-                <td class="col-value"><strong>{{ currencySymbol }}{{ order.total_value.toLocaleString() }}</strong></td>
+                <td class="col-date"><time :datetime="order.order_date">{{ formatDate(order.order_date) }}</time></td>
+                <td class="col-date"><time :datetime="order.expected_delivery">{{ formatDate(order.expected_delivery) }}</time></td>
+                <td class="col-value num"><strong>{{ currencySymbol }}{{ order.total_value.toLocaleString() }}</strong></td>
               </tr>
             </tbody>
           </table>
@@ -253,121 +256,99 @@ export default {
 </script>
 
 <style scoped>
-/* Fixed table layout to prevent column shifting */
+/* Fixed layout keeps columns from shifting; the min width makes the container
+   scroll sideways on narrow screens instead of crushing the columns */
 .orders-table {
   table-layout: fixed;
-  width: 100%;
+  inline-size: 100%;
+  min-inline-size: 64rem;
 }
 
-/* Column widths */
-.col-order-number {
-  width: 130px;
-}
-
-.col-customer {
-  width: 180px;
-}
-
-.col-items {
-  width: 200px;
-}
-
-.col-status {
-  width: 130px;
-}
-
-.col-date {
-  width: 140px;
-}
-
-.col-value {
-  width: 120px;
-}
-
-/* Items details styling */
-.items-details {
-  position: relative;
-}
+.col-order-number { inline-size: 8.5rem; }
+.col-customer { inline-size: 11rem; }
+.col-items { inline-size: 14rem; }
+.col-status { inline-size: 8.5rem; }
+.col-date { inline-size: 9rem; }
+.col-value { inline-size: 8rem; }
 
 .items-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   cursor: pointer;
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: 500;
   list-style: none;
   user-select: none;
-  display: inline-block;
 }
 
 .items-summary::-webkit-details-marker {
   display: none;
 }
 
+/* Border chevron; rotates when open */
 .items-summary::before {
-  content: '▶';
-  display: inline-block;
-  margin-right: 0.375rem;
-  font-size: 0.75rem;
-  transition: transform 0.2s;
+  content: '';
+  inline-size: 0.4rem;
+  block-size: 0.4rem;
+  border-inline-end: 2px solid currentColor;
+  border-block-end: 2px solid currentColor;
+  rotate: -45deg;
+  transition: rotate var(--duration) var(--ease-out);
 }
 
 .items-details[open] .items-summary::before {
-  transform: rotate(90deg);
+  rotate: 45deg;
 }
 
 .items-summary:hover {
-  color: #2563eb;
   text-decoration: underline;
 }
 
-/* Dropdown container */
-.items-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 0.5rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 0.75rem;
-  z-index: 10;
-  min-width: 300px;
-  max-width: 400px;
+.items-summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Expands in normal flow inside the cell. A floating dropdown (position:absolute;
+   top:100%) is clipped by .table-container's overflow, so the list grows the row
+   instead - no JS, no anchor positioning, nothing to clip. */
+.items-list {
+  margin-block-start: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
 }
 
 .item-entry {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+  white-space: normal;
 }
 
 .item-entry:last-child {
-  border-bottom: none;
+  border-block-end: none;
 }
 
 .item-name {
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   font-weight: 500;
-  color: #0f172a;
-}
-
-.restocking-empty {
-  text-align: center;
-  padding: 1.5rem;
-  color: #64748b;
-  font-size: 0.938rem;
-}
-
-.restocking-empty a {
-  margin-left: 0.5rem;
-  color: #2563eb;
-  font-weight: 500;
+  color: var(--color-text);
 }
 
 .item-meta {
-  font-size: 0.813rem;
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+}
+
+.empty-link {
+  margin-inline-start: var(--space-2);
+  color: var(--color-primary);
+  font-weight: 500;
 }
 </style>
