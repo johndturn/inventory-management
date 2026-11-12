@@ -29,6 +29,58 @@
 
       <div class="card">
         <div class="card-header">
+          <h3 class="card-title">{{ t('orders.submittedOrders.title') }} ({{ restockingOrders.length }})</h3>
+        </div>
+        <div v-if="restockingError" class="error">{{ restockingError }}</div>
+        <div v-else-if="restockingOrders.length === 0" class="restocking-empty">
+          {{ t('orders.submittedOrders.empty') }}
+          <router-link to="/restocking">{{ t('orders.submittedOrders.goToRestocking') }}</router-link>
+        </div>
+        <div v-else class="table-container">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th class="col-order-number">{{ t('orders.submittedOrders.orderNumber') }}</th>
+                <th class="col-date">{{ t('orders.submittedOrders.submitted') }}</th>
+                <th class="col-items">{{ t('orders.submittedOrders.items') }}</th>
+                <th class="col-value">{{ t('orders.submittedOrders.total') }}</th>
+                <th class="col-date">{{ t('orders.submittedOrders.leadTime') }}</th>
+                <th class="col-date">{{ t('orders.submittedOrders.expectedDelivery') }}</th>
+                <th class="col-status">{{ t('orders.submittedOrders.status') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in restockingOrders" :key="order.id">
+                <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
+                <td class="col-date">{{ formatDate(order.submitted_date) }}</td>
+                <td class="col-items">
+                  <details class="items-details">
+                    <summary class="items-summary">
+                      {{ t('orders.itemsCount', { count: order.items.length }) }}
+                    </summary>
+                    <div class="items-dropdown">
+                      <div v-for="item in order.items" :key="item.sku" class="item-entry">
+                        <span class="item-name">{{ translateProductName(item.item_name) }}</span>
+                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ formatCurrencyWithDecimals(item.unit_cost, currentCurrency, 2) }}</span>
+                        <span class="item-meta">{{ item.supplier }} · {{ t('orders.submittedOrders.days', { count: item.lead_time_days }) }}</span>
+                      </div>
+                    </div>
+                  </details>
+                </td>
+                <td class="col-value"><strong>{{ formatCurrency(order.total_cost, currentCurrency) }}</strong></td>
+                <td class="col-date">{{ t('orders.submittedOrders.days', { count: order.lead_time_days }) }}</td>
+                <td class="col-date">{{ formatDate(order.expected_delivery) }}</td>
+                <td class="col-status">
+                  <span class="badge info">{{ t('orders.submittedOrders.statusSubmitted') }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
           <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
         </div>
         <div class="table-container">
@@ -83,6 +135,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
+import { formatCurrency, formatCurrencyWithDecimals } from '../utils/currency'
 
 export default {
   name: 'Orders',
@@ -95,6 +148,8 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
+    const restockingOrders = ref([])
+    const restockingError = ref(null)
 
     // Use shared filters
     const {
@@ -146,14 +201,35 @@ export default {
     const formatDate = (dateString) => {
       const { currentLocale } = useI18n()
       const locale = currentLocale.value === 'ja' ? 'ja-JP' : 'en-US'
-      return new Date(dateString).toLocaleDateString(locale, {
+      // JS parses a bare "YYYY-MM-DD" (restocking orders) as UTC midnight, which renders
+      // as the previous day west of UTC. Pin date-only strings to local midnight instead.
+      const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+      const date = new Date(isDateOnly ? `${dateString}T00:00:00` : dateString)
+      if (isNaN(date.getTime())) return dateString || ''
+      return date.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       })
     }
 
-    onMounted(loadOrders)
+    // Restocking orders are loaded once and deliberately NOT reloaded on global
+    // filter changes: they have no warehouse/status/month, so those filters don't apply.
+    // Errors are kept local so a failure here never breaks the main orders table.
+    const loadRestockingOrders = async () => {
+      try {
+        restockingError.value = null
+        restockingOrders.value = await api.getRestockingOrders()
+      } catch (err) {
+        restockingError.value = t('orders.submittedOrders.loadFailed')
+        console.error('Failed to load restocking orders:', err)
+      }
+    }
+
+    onMounted(() => {
+      loadOrders()
+      loadRestockingOrders()
+    })
 
     return {
       t,
@@ -164,6 +240,11 @@ export default {
       getOrderStatusClass,
       formatDate,
       currencySymbol,
+      currentCurrency,
+      restockingOrders,
+      restockingError,
+      formatCurrency,
+      formatCurrencyWithDecimals,
       translateProductName,
       translateCustomerName
     }
@@ -270,6 +351,19 @@ export default {
   font-size: 0.875rem;
   font-weight: 500;
   color: #0f172a;
+}
+
+.restocking-empty {
+  text-align: center;
+  padding: 1.5rem;
+  color: #64748b;
+  font-size: 0.938rem;
+}
+
+.restocking-empty a {
+  margin-left: 0.5rem;
+  color: #2563eb;
+  font-weight: 500;
 }
 
 .item-meta {
