@@ -7,8 +7,24 @@ export default {
     finance: '財務',
     demandForecast: '需要予測',
     restocking: '補充発注',
+    reports: 'レポート',
+    primary: 'メインナビゲーション',
     companyName: '触媒コンポーネンツ',
     subtitle: '在庫管理システム'
+  },
+
+  // アプリシェル（サイドバー、ドロワー、トップバー）
+  shell: {
+    skipToContent: 'コンテンツへスキップ',
+    openMenu: 'メニューを開く',
+    closeMenu: 'メニューを閉じる',
+    filters: 'フィルター',
+    account: 'アカウント',
+    theme: 'テーマ',
+    themeSystem: 'システム',
+    themeLight: 'ライト',
+    themeDark: 'ダーク',
+    language: '言語'
   },
 
   // Dashboard
@@ -241,6 +257,7 @@ export default {
 
   // Filters
   filters: {
+    reset: 'すべてのフィルターをリセット',
     timePeriod: '期間',
     location: '場所',
     category: 'カテゴリ',
@@ -347,6 +364,7 @@ export default {
   // Tasks Modal
   tasks: {
     title: 'マイタスク',
+    deleteTask: 'タスクを削除',
     taskTitle: 'タスク名',
     taskTitlePlaceholder: 'タスク名を入力...',
     priority: '優先度',
