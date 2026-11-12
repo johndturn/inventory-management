@@ -1,82 +1,51 @@
 <!--
-  ThemeSwitcher: a System / Light / Dark segmented control built from native
-  radios inside a fieldset. Arrow keys, focus, and screen-reader grouping come
-  from the platform. The selected state is styled with :has(:checked).
+  ThemeSwitcher: one icon button. The icon shows the theme that is currently
+  on (sun = light, computer = terminal); the label and tooltip name the action
+  the click performs. The button holds no ids, so it is safe to render twice
+  (sidebar and mobile drawer).
 -->
 <template>
-  <fieldset class="theme-switcher">
-    <legend class="visually-hidden">{{ t('shell.theme') }}</legend>
-    <label v-for="option in options" :key="option.value" class="theme-switcher__option">
-      <input
-        v-model="theme"
-        class="visually-hidden"
-        type="radio"
-        :name="groupName"
-        :value="option.value"
-      />
-      <span>{{ option.label }}</span>
-    </label>
-  </fieldset>
+  <button
+    type="button"
+    class="icon-btn"
+    :aria-label="actionLabel"
+    :title="actionLabel"
+    @click="toggleTheme"
+  >
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path :d="iconPath" />
+    </svg>
+  </button>
 </template>
 
 <script>
-import { computed, useId } from 'vue'
+import { computed } from 'vue'
 import { useTheme } from '../../composables/useTheme'
 import { useI18n } from '../../composables/useI18n'
+
+// 24x24 stroke paths. Sun: a circle drawn as two arcs plus eight rays.
+const SUN_PATH =
+  'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z' +
+  'M12 2v2M12 20v2M2 12h2M20 12h2' +
+  'M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41'
+// Computer: monitor screen, neck and base
+const COMPUTER_PATH = 'M3 4h18v12H3z M12 16v4 M8 20h8'
 
 export default {
   name: 'ThemeSwitcher',
   setup() {
-    const { theme } = useTheme()
+    // scheme is the theme on screen (already resolved against the OS)
+    const { scheme, toggleTheme } = useTheme()
     const { t } = useI18n()
 
-    // Values must stay system | light | dark
-    const options = computed(() => [
-      { value: 'system', label: t('shell.themeSystem') },
-      { value: 'light', label: t('shell.themeLight') },
-      { value: 'dark', label: t('shell.themeDark') }
-    ])
+    const isDark = computed(() => scheme.value === 'dark')
+    const iconPath = computed(() => (isDark.value ? COMPUTER_PATH : SUN_PATH))
+    // Describes the action, not the current state
+    const actionLabel = computed(() =>
+      isDark.value ? t('shell.switchToLight') : t('shell.switchToTerminal')
+    )
 
-    // Rendered in both the sidebar and the drawer. A shared radio name would
-    // merge the two copies into one group, so each instance gets its own name.
-    const groupName = `theme-${useId()}`
-
-    return { t, theme, options, groupName }
+    return { iconPath, actionLabel, toggleTheme }
   }
 }
 </script>
-
-<style scoped>
-.theme-switcher {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  border: 0;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-hover);
-}
-
-.theme-switcher__option {
-  display: grid;
-  place-items: center;
-  min-height: calc(var(--control-h) - var(--space-2));
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.theme-switcher__option:has(input:checked) {
-  background: var(--color-surface-raised);
-  color: var(--color-text);
-  box-shadow: var(--shadow-sm);
-}
-
-.theme-switcher__option:has(input:focus-visible) {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-</style>

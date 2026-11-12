@@ -20,10 +20,8 @@ export default {
     closeMenu: 'Close menu',
     filters: 'Filters',
     account: 'Account',
-    theme: 'Theme',
-    themeSystem: 'System',
-    themeLight: 'Light',
-    themeDark: 'Dark',
+    switchToTerminal: 'Switch to terminal theme',
+    switchToLight: 'Switch to light theme',
     language: 'Language'
   },
 

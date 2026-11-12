@@ -17,8 +17,10 @@
         <SidebarNav :items="navItems" :label="t('nav.primary')" />
 
         <template #footer>
-          <ThemeSwitcher />
-          <LanguageSwitcher />
+          <div class="sidebar-tools">
+            <LanguageSwitcher />
+            <ThemeSwitcher />
+          </div>
           <ProfileMenu
             @show-profile-details="showProfileDetails = true"
             @show-tasks="showTasks = true"
@@ -186,5 +188,15 @@ export default {
 .brand__subtitle {
   font-size: var(--text-xs);
   color: var(--color-text-subtle);
+}
+
+/* Sidebar footer row: language picker fills the row, theme button sits at the
+   inline-end. minmax(0, 1fr) lets the picker's label truncate instead of
+   pushing the button out. */
+.sidebar-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
 }
 </style>

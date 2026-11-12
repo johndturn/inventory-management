@@ -20,10 +20,8 @@ export default {
     closeMenu: 'メニューを閉じる',
     filters: 'フィルター',
     account: 'アカウント',
-    theme: 'テーマ',
-    themeSystem: 'システム',
-    themeLight: 'ライト',
-    themeDark: 'ダーク',
+    switchToTerminal: 'ターミナルテーマに切り替え',
+    switchToLight: 'ライトテーマに切り替え',
     language: '言語'
   },
 
