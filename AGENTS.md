@@ -70,13 +70,19 @@ npm install && npm run dev
 - API Client: `client/src/api.js`
 - Backend: `server/main.py`, `server/mock_data.py`
 - Data: `server/data/*.json`
-- Styles: `client/src/App.vue`
+- Styles: `client/src/styles/` (layered tokens and shared primitives; `terminal.css` is the dark skin)
 
 ## Design System
-- Colors: Slate/gray (#0f172a, #64748b, #e2e8f0)
+- Light theme colors: Slate/gray (#0f172a, #64748b, #e2e8f0)
 - Status: green/blue/yellow/red
-- Charts: Custom SVG, CSS Grid for layouts
+- Charts: Custom SVG, CSS Grid for layouts; chart colors only from `--chart-*` tokens
 - No emojis in UI
+- **Dark mode is the "floor terminal" skin** (spec: `docs/superpowers/specs/2026-11-12-terminal-dark-mode-design.md`):
+  true black, phosphor text, IBM Plex Mono + VT323/DotGothic16 pixel display, square panels, stepped motion.
+  - Scope dark-only rules to `:root[data-scheme='dark']` in `client/src/styles/terminal.css` (unlayered on purpose so it beats scoped view styles); never put terminal fonts, shapes or motion in light mode.
+  - Never animate data values; motion is limited to titles, chart marks and containers, and must respect reduced motion.
+  - Fonts are self-hosted via `@fontsource/*`; do not add CDN-hosted fonts.
+  - Theme switcher is a single icon button (sun = light, computer = terminal); `useTheme()` exposes `scheme` and `toggleTheme()`.
 
 ## Code Conventions
 - Always document non-obvious logic changes with comments
