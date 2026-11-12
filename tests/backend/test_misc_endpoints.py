@@ -45,6 +45,20 @@ class TestDemandEndpoints:
             assert forecast["current_demand"] >= 0
             assert forecast["forecasted_demand"] >= 0
 
+    def test_demand_forecast_restocking_fields(self, client):
+        """Test that forecasts carry the cost, lead time and supplier used for restocking."""
+        response = client.get("/api/demand")
+        data = response.json()
+        assert len(data) > 0
+
+        for forecast in data:
+            assert isinstance(forecast["unit_cost"], (int, float))
+            assert forecast["unit_cost"] > 0
+            assert isinstance(forecast["lead_time_days"], int)
+            assert forecast["lead_time_days"] > 0
+            assert isinstance(forecast["supplier"], str)
+            assert forecast["supplier"]
+
     def test_stable_demand_items_have_small_changes(self, client):
         """Test that items with 'stable' trend have less than 2% change."""
         response = client.get("/api/demand")

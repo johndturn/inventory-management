@@ -1,0 +1,20 @@
+/*
+ * Design system entry point — import once from main.js:  import './styles/index.css'
+ *
+ * Layer order is declared here and nowhere else. A later layer beats an earlier
+ * one regardless of selector specificity, so nothing needs !important.
+ *
+ * Vue <style scoped> blocks are unlayered, and unlayered styles beat every layer.
+ * That is intentional: a component's own styles override global defaults.
+ *
+ * Each imported file wraps its own rules in @layer. Vite 8 drops the order
+ * statement below when it inlines the imports, and layer order then comes from
+ * first appearance. Keep the @import order identical to the statement.
+ */
+@layer reset, tokens, base, components, utilities;
+
+@import './reset.css';
+@import './tokens.css';
+@import './base.css';
+@import './components.css';
+@import './utilities.css';
