@@ -7,8 +7,24 @@ export default {
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
     restocking: 'Restocking',
+    reports: 'Reports',
+    primary: 'Main navigation',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
+  },
+
+  // App shell (sidebar, drawer, top bar)
+  shell: {
+    skipToContent: 'Skip to content',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    filters: 'Filters',
+    account: 'Account',
+    theme: 'Theme',
+    themeSystem: 'System',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    language: 'Language'
   },
 
   // Dashboard
@@ -241,6 +257,7 @@ export default {
 
   // Filters
   filters: {
+    reset: 'Reset all filters',
     timePeriod: 'Time Period',
     location: 'Location',
     category: 'Category',
@@ -347,6 +364,7 @@ export default {
   // Tasks Modal
   tasks: {
     title: 'My Tasks',
+    deleteTask: 'Delete task',
     taskTitle: 'Task Title',
     taskTitlePlaceholder: 'Enter task title...',
     priority: 'Priority',

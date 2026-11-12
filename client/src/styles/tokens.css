@@ -1,0 +1,200 @@
+/*
+ * Tokens come in three tiers. Views and components use only tiers 2 and 3.
+ *
+ *  1. Primitives  (--slate-500)       raw palette and scale values; never used in views
+ *  2. Semantic    (--color-surface)   meaning-based; these carry light/dark mode
+ *  3. Component   (--sidebar-w)       layout constants for one part of the shell
+ *
+ * Light/dark mode: `color-scheme: light dark` plus light-dark() pairs. With no
+ * override the OS preference wins. [data-theme] on <html> forces one scheme.
+ * Set color-scheme ONLY on :root. Vite 8 (Lightning CSS) compiles light-dark()
+ * into variables keyed off the root color-scheme, so per-element color-scheme
+ * changes do not work after build.
+ *
+ * Primitives are the project's existing palette (Tailwind slate/blue/emerald/
+ * orange/red hex values that were previously hard-coded across the views).
+ */
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* ---- 1. Primitives ------------------------------------------------ */
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --slate-950: #020617;
+
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-400: #60a5fa;
+    --blue-500: #3b82f6;
+    --blue-600: #2563eb;
+    --blue-800: #1e40af;
+
+    --emerald-100: #d1fae5;
+    --emerald-400: #34d399;
+    --emerald-500: #10b981;
+    --emerald-700: #047857;
+    --emerald-800: #065f46;
+
+    --amber-400: #fbbf24;
+    --amber-500: #f59e0b;
+
+    --orange-200: #fed7aa;
+    --orange-400: #fb923c;
+    --orange-700: #c2410c;
+    --orange-800: #92400e;
+
+    --red-50: #fef2f2;
+    --red-200: #fecaca;
+    --red-400: #f87171;
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+    --red-800: #991b1b;
+
+    /* ---- 2. Semantic: color ------------------------------------------- */
+    /* Dark mode shows elevation by getting lighter, not by adding shadow:
+       bg is the darkest surface, then surface, then raised. */
+    --color-bg: light-dark(var(--slate-50), var(--slate-950));
+    --color-surface: light-dark(#fff, var(--slate-900));
+    --color-surface-raised: light-dark(#fff, var(--slate-800));
+    --color-surface-hover: light-dark(var(--slate-100), var(--slate-800));
+    /* One step below the surface it sits on (modal footers). Not --color-bg:
+       in dark mode that is the darkest tone and reads as a hole in a raised modal. */
+    --color-surface-sunken: light-dark(var(--slate-50), var(--slate-900));
+    --color-border: light-dark(var(--slate-200), var(--slate-800));
+    --color-border-strong: light-dark(var(--slate-300), var(--slate-700));
+
+    --color-text: light-dark(var(--slate-900), var(--slate-50));
+    --color-text-muted: light-dark(var(--slate-700), var(--slate-300));
+    --color-text-subtle: light-dark(var(--slate-500), var(--slate-400));
+
+    /* Accents get lighter in dark mode to keep contrast against dark surfaces */
+    --color-primary: light-dark(var(--blue-600), var(--blue-400));
+    --color-primary-hover: light-dark(var(--blue-500), var(--blue-500));
+    --color-primary-soft: light-dark(var(--blue-50), rgb(59 130 246 / 16%));
+    --color-on-primary: light-dark(#fff, var(--slate-950));
+    --color-focus: var(--color-primary);
+
+    /* Status: a foreground for text and icons, plus a soft background for badges.
+       Light-mode foregrounds are one step darker than the old hard-coded values
+       (e.g. emerald-600 -> 700) so body-size status text clears 4.5:1 on white.
+       Dark-mode soft backgrounds are low-alpha tints, not pastels. */
+    --color-success: light-dark(var(--emerald-700), var(--emerald-400));
+    --color-success-soft: light-dark(var(--emerald-100), rgb(52 211 153 / 14%));
+    --color-on-success-soft: light-dark(var(--emerald-800), var(--emerald-400));
+    --color-warning: light-dark(var(--orange-700), var(--orange-400));
+    --color-warning-soft: light-dark(var(--orange-200), rgb(251 146 60 / 14%));
+    --color-on-warning-soft: light-dark(var(--orange-800), var(--orange-400));
+    --color-danger: light-dark(var(--red-600), var(--red-400));
+    --color-danger-soft: light-dark(var(--red-200), rgb(248 113 113 / 14%));
+    --color-on-danger-soft: light-dark(var(--red-800), var(--red-400));
+    --color-danger-bg: light-dark(var(--red-50), rgb(248 113 113 / 10%));
+    --color-info: var(--color-primary);
+    --color-info-soft: light-dark(var(--blue-100), rgb(96 165 250 / 16%));
+    --color-on-info-soft: light-dark(var(--blue-800), var(--blue-400));
+
+    /* Charts: SVG fills and strokes read these, never hex.
+       1-4 follow the order-status colors the charts already used
+       (shipped, delivered, processing, backordered); 5 is the neutral bar color. */
+    --chart-1: light-dark(var(--blue-500), var(--blue-400));
+    --chart-2: light-dark(var(--emerald-500), var(--emerald-400));
+    --chart-3: light-dark(var(--amber-500), var(--amber-400));
+    --chart-4: light-dark(var(--red-500), var(--red-400));
+    --chart-5: light-dark(var(--slate-500), var(--slate-400));
+    --chart-track: light-dark(var(--slate-100), var(--slate-800));
+    --chart-grid: var(--color-border);
+    --chart-axis: var(--color-text-subtle);
+
+    /* ---- 2. Semantic: type, space, shape, motion ---------------------- */
+    /* System stack. 'Inter' is used only if installed locally; no font is loaded
+       from a CDN (public repo, and no third-party requests). */
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+    /* Scale keeps the project's existing sizes so headings and numbers don't shift */
+    --text-xs: 0.75rem;    /* 12 — table headers, captions, badges */
+    --text-sm: 0.8125rem;  /* 13 — secondary labels */
+    --text-base: 0.875rem; /* 14 — body, table cells, controls */
+    --text-md: 0.9375rem;  /* 15 — page descriptions, nav */
+    --text-lg: 1.125rem;   /* 18 — card titles */
+    --text-xl: 1.5rem;     /* 24 — section numbers */
+    --text-2xl: 1.875rem;  /* 30 — page titles */
+    --text-3xl: 2.25rem;   /* 36 — stat values */
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-full: 999px;
+
+    --shadow-sm: 0 1px 2px light-dark(rgb(0 0 0 / 5%), rgb(0 0 0 / 30%));
+    --shadow-md: 0 4px 12px light-dark(rgb(0 0 0 / 6%), rgb(0 0 0 / 40%));
+    --shadow-lg: 0 12px 32px light-dark(rgb(15 23 42 / 12%), rgb(0 0 0 / 50%));
+
+    --duration: 200ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Control height: 36px for a mouse, 44px when the primary pointer is a finger */
+    --control-h: 2.25rem;
+
+    /* ---- 3. Component / layout ---------------------------------------- */
+    --sidebar-w: 15.5rem;
+    --topbar-h: 3.5rem;
+    --page-gutter: var(--space-4);
+    --content-max: 100rem; /* the old 1600px page cap */
+
+    /* Stacking ladder. Dialogs and popovers render in the top layer, so they
+       need no z-index. Only sticky in-flow chrome is ranked here. */
+    --z-sticky: 10;
+    --z-topbar: 40;
+
+    /*
+     * Breakpoints. Media queries cannot read custom properties, so these are
+     * literal values; keep them in sync wherever they appear:
+     *   40rem (640px)   compact: shell padding steps up, top bar becomes sticky
+     *   64rem (1024px)  wide: persistent sidebar replaces the drawer
+     *                   (AppShell.vue CSS and NavDrawer.vue matchMedia)
+     * Inside page content, prefer container queries on `content`.
+     */
+  }
+
+  @media (width >= 40rem) {
+    :root {
+      --page-gutter: var(--space-8);
+    }
+  }
+
+  @media (pointer: coarse) {
+    :root {
+      --control-h: 2.75rem;
+    }
+  }
+
+  /* Explicit user choice; useTheme() sets this attribute, and so does the inline
+     script in index.html before first paint. No attribute means follow the OS. */
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+}

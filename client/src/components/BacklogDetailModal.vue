@@ -1,94 +1,94 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="isOpen && backlogItem" class="modal-overlay" @click="close">
-        <div class="modal-container" @click.stop>
-          <div class="modal-header">
-            <h3 class="modal-title">Inventory Shortage Details</h3>
-            <button class="close-button" @click="close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
+  <dialog
+    ref="dialogEl"
+    class="modal-container"
+    :aria-labelledby="titleId"
+    @close="onClose"
+    @click="onDialogClick"
+  >
+    <template v-if="backlogItem">
+      <div class="modal-header">
+        <h2 :id="titleId" class="modal-title">Inventory Shortage Details</h2>
+        <button type="button" class="close-button" :aria-label="t('common.close')" @click="close">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="shortage-header">
+          <div class="shortage-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M24 8L24 28M24 34L24 36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="3"/>
+            </svg>
           </div>
-
-          <div class="modal-body">
-            <div class="shortage-header">
-              <div class="shortage-icon">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                  <path d="M24 8L24 28M24 34L24 36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                  <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="3"/>
-                </svg>
-              </div>
-              <div class="shortage-title-section">
-                <h4 class="item-name">{{ translateProductName(backlogItem.item_name) }}</h4>
-                <div class="item-sku">SKU: {{ backlogItem.item_sku }}</div>
-              </div>
-              <span class="priority-badge" :class="backlogItem.priority">
-                {{ backlogItem.priority }} Priority
-              </span>
-            </div>
-
-            <div class="shortage-summary">
-              <div class="summary-card danger">
-                <div class="summary-label">Shortage Amount</div>
-                <div class="summary-value">{{ shortage }} units</div>
-              </div>
-              <div class="summary-card warning">
-                <div class="summary-label">Days Delayed</div>
-                <div class="summary-value">{{ backlogItem.days_delayed }} days</div>
-              </div>
-            </div>
-
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Order ID</div>
-                <div class="info-value order-id">{{ backlogItem.order_id }}</div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-label">Item SKU</div>
-                <div class="info-value sku">{{ backlogItem.item_sku }}</div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-label">Quantity Needed</div>
-                <div class="info-value">{{ backlogItem.quantity_needed }} units</div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-label">Quantity Available</div>
-                <div class="info-value">{{ backlogItem.quantity_available }} units</div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-label">Expected Date</div>
-                <div class="info-value">{{ formatDate(backlogItem.expected_date) }}</div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-label">Status</div>
-                <div class="info-value">
-                  <span class="badge danger">Backordered</span>
-                </div>
-              </div>
-            </div>
+          <div class="shortage-title-section">
+            <p class="item-name">{{ translateProductName(backlogItem.item_name) }}</p>
+            <div class="item-sku">SKU: {{ backlogItem.item_sku }}</div>
           </div>
+          <span :class="['badge', backlogItem.priority]">
+            {{ backlogItem.priority }} Priority
+          </span>
+        </div>
 
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="close">Close</button>
+        <div class="shortage-summary">
+          <div class="summary-card danger">
+            <div class="detail-label">Shortage Amount</div>
+            <div class="summary-value">{{ shortage }} units</div>
+          </div>
+          <div class="summary-card warning">
+            <div class="detail-label">Days Delayed</div>
+            <div class="summary-value">{{ backlogItem.days_delayed }} days</div>
           </div>
         </div>
+
+        <dl class="detail-grid">
+          <div>
+            <dt class="detail-label">Order ID</dt>
+            <dd class="detail-value mono">{{ backlogItem.order_id }}</dd>
+          </div>
+          <div>
+            <dt class="detail-label">Item SKU</dt>
+            <dd class="detail-value mono">{{ backlogItem.item_sku }}</dd>
+          </div>
+          <div>
+            <dt class="detail-label">Quantity Needed</dt>
+            <dd class="detail-value">{{ backlogItem.quantity_needed }} units</dd>
+          </div>
+          <div>
+            <dt class="detail-label">Quantity Available</dt>
+            <dd class="detail-value">{{ backlogItem.quantity_available }} units</dd>
+          </div>
+          <div>
+            <dt class="detail-label">Expected Date</dt>
+            <dd class="detail-value">
+              <time v-if="backlogItem.expected_date" :datetime="backlogItem.expected_date">{{ formatDate(backlogItem.expected_date) }}</time>
+              <template v-else>N/A</template>
+            </dd>
+          </div>
+          <div>
+            <dt class="detail-label">Status</dt>
+            <dd class="detail-value">
+              <span class="badge danger">Backordered</span>
+            </dd>
+          </div>
+        </dl>
       </div>
-    </Transition>
-  </Teleport>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" @click="close">{{ t('common.close') }}</button>
+      </div>
+    </template>
+  </dialog>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted, useId } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
-const { translateProductName } = useI18n()
+const { t, translateProductName } = useI18n()
 
 const props = defineProps({
   isOpen: {
@@ -103,18 +103,37 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
+const titleId = useId()
+const dialogEl = ref(null)
+
+// Drive the native dialog from the isOpen prop; showModal() gives focus trap, Escape and inert page for free
+watch(() => props.isOpen, (open) => {
+  const d = dialogEl.value
+  if (!d) return
+  if (open && !d.open) d.showModal()
+  else if (!open && d.open) d.close()
+})
+onMounted(() => { if (props.isOpen) dialogEl.value?.showModal() })
+
+// The native 'close' event fires for Escape and dialog.close(); only tell the parent if it still thinks we're open
+const onClose = () => { if (props.isOpen) emit('close') }
+
+// Backdrop tap: clicks on the dialog element itself (not its children) are outside the content box
+const onDialogClick = (e) => { if (e.target === dialogEl.value) dialogEl.value.close() }
+
 const shortage = computed(() => {
   if (!props.backlogItem) return 0
   return props.backlogItem.quantity_needed - props.backlogItem.quantity_available
 })
 
 const close = () => {
-  emit('close')
+  dialogEl.value?.close()
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 'N/A'
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -124,257 +143,88 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 1rem;
-}
-
-.modal-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  max-width: 700px;
-  width: 100%;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.15s ease;
-}
-
-.close-button:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
 .shortage-header {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 1.5rem;
+  gap: var(--space-5);
+  padding-block-end: var(--space-6);
+  margin-block-end: var(--space-6);
+  border-block-end: 1px solid var(--color-border);
 }
 
 .shortage-icon {
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+  display: grid;
+  place-items: center;
+  inline-size: 4rem;
+  block-size: 4rem;
   flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .shortage-title-section {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .item-name {
-  font-size: 1.5rem;
+  margin-block-end: var(--space-2);
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
+  color: var(--color-text);
 }
 
 .item-sku {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-family: 'Monaco', 'Courier New', monospace;
-}
-
-.priority-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  flex-shrink: 0;
-}
-
-.priority-badge.high {
-  background: #fecaca;
-  color: #991b1b;
-}
-
-.priority-badge.medium {
-  background: #fed7aa;
-  color: #92400e;
-}
-
-.priority-badge.low {
-  background: #dbeafe;
-  color: #1e40af;
+  font-size: var(--text-base);
+  color: var(--color-text-subtle);
+  font-family: var(--font-mono);
 }
 
 .shortage-summary {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin-block-end: var(--space-8);
 }
 
 .summary-card {
-  padding: 1.25rem;
-  border-radius: 10px;
-  border: 2px solid;
+  padding: var(--space-5);
+  border: 1px solid;
+  border-radius: var(--radius-md);
 }
 
 .summary-card.danger {
-  border-color: #fecaca;
-  background: #fef2f2;
+  border-color: var(--color-danger-soft);
+  background: var(--color-danger-bg);
 }
 
 .summary-card.warning {
-  border-color: #fed7aa;
-  background: #fffbeb;
-}
-
-.summary-label {
-  font-size: 0.813rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  margin-bottom: 0.5rem;
+  border-color: var(--color-warning-soft);
+  background: var(--color-warning-soft);
 }
 
 .summary-value {
-  font-size: 1.875rem;
+  margin-block-start: var(--space-2);
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .summary-card.danger .summary-value {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .summary-card.warning .summary-value {
-  color: #f59e0b;
+  color: var(--color-on-warning-soft);
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+.detail-value.mono {
+  font-family: var(--font-mono);
+  color: var(--color-primary);
 }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.info-label {
-  font-size: 0.813rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-}
-
-.info-value {
-  font-size: 0.938rem;
-  color: #0f172a;
-  font-weight: 500;
-}
-
-.info-value.order-id,
-.info-value.sku {
-  font-family: 'Monaco', 'Courier New', monospace;
-  color: #2563eb;
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.btn-secondary {
-  padding: 0.625rem 1.25rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-}
-
-.btn-secondary:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-}
-
-/* Modal transition animations */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active .modal-container,
-.modal-leave-active .modal-container {
-  transition: transform 0.2s ease;
-}
-
-.modal-enter-from .modal-container,
-.modal-leave-to .modal-container {
-  transform: scale(0.95);
+dd {
+  margin: 0;
 }
 </style>

@@ -1,316 +1,235 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="isOpen && costData" class="modal-overlay" @click="close">
-        <div class="modal-container" @click.stop>
-          <div class="modal-header">
-            <h3 class="modal-title">{{ costData.month }} Cost Breakdown</h3>
-            <button class="close-button" @click="close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div class="cost-summary">
-              <div class="summary-card total">
-                <div class="summary-label">Total Costs</div>
-                <div class="summary-value">{{ currencySymbol }}{{ totalCosts.toLocaleString() }}</div>
-              </div>
-            </div>
-
-            <div class="cost-breakdown">
-              <div class="cost-item procurement">
-                <div class="cost-header">
-                  <div class="cost-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <rect x="4" y="6" width="16" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
-                      <path d="M8 6V4M16 6V4M4 10H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="cost-info">
-                    <div class="cost-name">Procurement</div>
-                    <div class="cost-amount">{{ currencySymbol }}{{ costData.procurement.toLocaleString() }}</div>
-                  </div>
-                </div>
-                <div class="cost-percentage">{{ getProcurementPercentage() }}% of total</div>
-              </div>
-
-              <div class="cost-item operational">
-                <div class="cost-header">
-                  <div class="cost-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
-                      <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="cost-info">
-                    <div class="cost-name">Operational</div>
-                    <div class="cost-amount">{{ currencySymbol }}{{ costData.operational.toLocaleString() }}</div>
-                  </div>
-                </div>
-                <div class="cost-percentage">{{ getOperationalPercentage() }}% of total</div>
-              </div>
-
-              <div class="cost-item labor">
-                <div class="cost-header">
-                  <div class="cost-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
-                      <path d="M6 20C6 16.6863 8.68629 14 12 14C15.3137 14 18 16.6863 18 20" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                  </div>
-                  <div class="cost-info">
-                    <div class="cost-name">Labor</div>
-                    <div class="cost-amount">{{ currencySymbol }}{{ costData.labor.toLocaleString() }}</div>
-                  </div>
-                </div>
-                <div class="cost-percentage">{{ getLaborPercentage() }}% of total</div>
-              </div>
-
-              <div class="cost-item overhead">
-                <div class="cost-header">
-                  <div class="cost-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9 21 9 18 9 16C9 14 10 14 12 14C14 14 15 14 15 16C15 18 15 21 15 21M9 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="cost-info">
-                    <div class="cost-name">Overhead</div>
-                    <div class="cost-amount">{{ currencySymbol }}{{ costData.overhead.toLocaleString() }}</div>
-                  </div>
-                </div>
-                <div class="cost-percentage">{{ getOverheadPercentage() }}% of total</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="close">Close</button>
-          </div>
-        </div>
+  <dialog
+    ref="dialogEl"
+    class="modal-container"
+    :aria-labelledby="titleId"
+    @close="onClose"
+    @click="onDialogClick"
+  >
+    <template v-if="costData">
+      <div class="modal-header">
+        <h2 :id="titleId" class="modal-title">{{ costData.month }} Cost Breakdown</h2>
+        <button type="button" class="close-button" :aria-label="t('common.close')" @click="close">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
-    </Transition>
-  </Teleport>
+
+      <div class="modal-body">
+        <div class="summary-card">
+          <div class="summary-label">Total Costs</div>
+          <div class="summary-value">{{ currencySymbol }}{{ totalCosts.toLocaleString() }}</div>
+        </div>
+
+        <ul class="cost-breakdown" role="list">
+          <li v-for="item in costItems" :key="item.key" class="cost-item" :class="item.key">
+            <div class="cost-header">
+              <div class="cost-icon">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path v-for="d in item.paths" :key="d" :d="d" />
+                </svg>
+              </div>
+              <div class="cost-info">
+                <div class="cost-name">{{ item.label }}</div>
+                <div class="cost-amount">{{ currencySymbol }}{{ item.amount.toLocaleString() }}</div>
+              </div>
+            </div>
+            <div class="cost-percentage">{{ item.percentage }}% of total</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn" @click="close">{{ t('common.close') }}</button>
+      </div>
+    </template>
+  </dialog>
 </template>
 
-<script setup>
-import { computed } from 'vue'
+<script>
+import { ref, computed, watch, onMounted, useId } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
-const { currentCurrency } = useI18n()
-
-const currencySymbol = computed(() => {
-  return currentCurrency.value === 'JPY' ? '¥' : '$'
-})
-
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
+export default {
+  name: 'CostDetailModal',
+  props: {
+    isOpen: {
+      type: Boolean,
+      default: false
+    },
+    costData: {
+      type: Object,
+      default: null
+    }
   },
-  costData: {
-    type: Object,
-    default: null
+  emits: ['close'],
+  setup(props, { emit }) {
+    const { t, currentCurrency } = useI18n()
+    const titleId = useId()
+    const dialogEl = ref(null)
+
+    const currencySymbol = computed(() => {
+      return currentCurrency.value === 'JPY' ? '¥' : '$'
+    })
+
+    const totalCosts = computed(() => {
+      if (!props.costData) return 0
+      return props.costData.procurement + props.costData.operational +
+             props.costData.labor + props.costData.overhead
+    })
+
+    const percentageOf = (value) => {
+      if (totalCosts.value === 0) return 0
+      return ((value / totalCosts.value) * 100).toFixed(1)
+    }
+
+    // Icon path data per category (stroke icons, drawn with the shared .icon class)
+    const costItems = computed(() => {
+      if (!props.costData) return []
+      const data = props.costData
+      return [
+        {
+          key: 'procurement',
+          label: 'Procurement',
+          amount: data.procurement,
+          percentage: percentageOf(data.procurement),
+          paths: ['M6 6H18A2 2 0 0 1 20 8V18A2 2 0 0 1 18 20H6A2 2 0 0 1 4 18V8A2 2 0 0 1 6 6Z', 'M8 6V4M16 6V4M4 10H20']
+        },
+        {
+          key: 'operational',
+          label: 'Operational',
+          amount: data.operational,
+          percentage: percentageOf(data.operational),
+          paths: ['M12 4A8 8 0 1 0 12 20A8 8 0 1 0 12 4Z', 'M12 8V12L15 15']
+        },
+        {
+          key: 'labor',
+          label: 'Labor',
+          amount: data.labor,
+          percentage: percentageOf(data.labor),
+          paths: ['M12 4A4 4 0 1 0 12 12A4 4 0 1 0 12 4Z', 'M6 20C6 16.7 8.7 14 12 14C15.3 14 18 16.7 18 20']
+        },
+        {
+          key: 'overhead',
+          label: 'Overhead',
+          amount: data.overhead,
+          percentage: percentageOf(data.overhead),
+          paths: ['M3 12L12 3L21 12', 'M5 10V20H19V10', 'M9 20V14H15V20']
+        }
+      ]
+    })
+
+    // Drive the native dialog from the isOpen prop; showModal() gives focus trap, Escape and inert page for free
+    watch(() => props.isOpen, (open) => {
+      const d = dialogEl.value
+      if (!d) return
+      if (open && !d.open) d.showModal()
+      else if (!open && d.open) d.close()
+    })
+
+    onMounted(() => {
+      if (props.isOpen) dialogEl.value?.showModal()
+    })
+
+    // The native 'close' event fires for Escape and dialog.close(); only tell the parent if it still thinks we're open
+    const onClose = () => {
+      if (props.isOpen) emit('close')
+    }
+
+    // Backdrop tap: clicks on the dialog element itself (not its children) are outside the content box
+    const onDialogClick = (e) => {
+      if (e.target === dialogEl.value) dialogEl.value.close()
+    }
+
+    const close = () => {
+      dialogEl.value?.close()
+    }
+
+    return {
+      t,
+      titleId,
+      dialogEl,
+      currencySymbol,
+      totalCosts,
+      costItems,
+      onClose,
+      onDialogClick,
+      close
+    }
   }
-})
-
-const emit = defineEmits(['close'])
-
-const totalCosts = computed(() => {
-  if (!props.costData) return 0
-  return props.costData.procurement + props.costData.operational +
-         props.costData.labor + props.costData.overhead
-})
-
-const getProcurementPercentage = () => {
-  if (!props.costData || totalCosts.value === 0) return 0
-  return ((props.costData.procurement / totalCosts.value) * 100).toFixed(1)
-}
-
-const getOperationalPercentage = () => {
-  if (!props.costData || totalCosts.value === 0) return 0
-  return ((props.costData.operational / totalCosts.value) * 100).toFixed(1)
-}
-
-const getLaborPercentage = () => {
-  if (!props.costData || totalCosts.value === 0) return 0
-  return ((props.costData.labor / totalCosts.value) * 100).toFixed(1)
-}
-
-const getOverheadPercentage = () => {
-  if (!props.costData || totalCosts.value === 0) return 0
-  return ((props.costData.overhead / totalCosts.value) * 100).toFixed(1)
-}
-
-const close = () => {
-  emit('close')
 }
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 1rem;
-}
-
-.modal-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.15s ease;
-}
-
-.close-button:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
-.cost-summary {
-  margin-bottom: 2rem;
-}
-
 .summary-card {
-  padding: 1.5rem;
-  border-radius: 10px;
+  margin-block-end: var(--space-6);
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
   text-align: center;
-}
-
-.summary-card.total {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 .summary-label {
-  font-size: 0.875rem;
+  margin-block-end: var(--space-2);
+  font-size: var(--text-base);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  opacity: 0.9;
-  margin-bottom: 0.5rem;
 }
 
 .summary-value {
-  font-size: 2.25rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .cost-breakdown {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
+/* --accent drives the tinted card and icon chip; series match the Spending charts */
 .cost-item {
-  padding: 1.25rem;
-  border-radius: 10px;
-  border: 2px solid;
+  --accent: var(--chart-1);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
-.cost-item.procurement {
-  border-color: #93c5fd;
-  background: #eff6ff;
-}
-
-.cost-item.operational {
-  border-color: #c4b5fd;
-  background: #f5f3ff;
-}
-
-.cost-item.labor {
-  border-color: #86efac;
-  background: #f0fdf4;
-}
-
-.cost-item.overhead {
-  border-color: #fcd34d;
-  background: #fffbeb;
-}
+.cost-item.procurement { --accent: var(--chart-1); }
+.cost-item.operational { --accent: var(--chart-5); }
+.cost-item.labor { --accent: var(--chart-2); }
+.cost-item.overhead { --accent: var(--chart-3); }
 
 .cost-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  gap: var(--space-4);
+  margin-block-end: var(--space-2);
 }
 
 .cost-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
+  inline-size: 3rem;
+  block-size: 3rem;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--color-on-primary);
 }
 
-.cost-item.procurement .cost-icon {
-  background: #3b82f6;
-  color: white;
-}
-
-.cost-item.operational .cost-icon {
-  background: #8b5cf6;
-  color: white;
-}
-
-.cost-item.labor .cost-icon {
-  background: #10b981;
-  color: white;
-}
-
-.cost-item.overhead .cost-icon {
-  background: #f59e0b;
-  color: white;
+.cost-icon .icon {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  stroke-width: 2;
 }
 
 .cost-info {
@@ -318,67 +237,22 @@ const close = () => {
 }
 
 .cost-name {
+  margin-block-end: var(--space-1);
+  font-size: var(--text-md);
   font-weight: 600;
-  color: #0f172a;
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
+  color: var(--color-text);
 }
 
 .cost-amount {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
 }
 
 .cost-percentage {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: var(--text-base);
   font-weight: 500;
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-secondary {
-  padding: 0.625rem 1.25rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-}
-
-.btn-secondary:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-}
-
-/* Modal transition animations */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active .modal-container,
-.modal-leave-active .modal-container {
-  transition: transform 0.2s ease;
-}
-
-.modal-enter-from .modal-container,
-.modal-leave-to .modal-container {
-  transform: scale(0.95);
+  color: var(--color-text-subtle);
 }
 </style>
