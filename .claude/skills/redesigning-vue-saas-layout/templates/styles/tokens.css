@@ -1,0 +1,168 @@
+/*
+ * Tokens come in three tiers. Views and components use only tiers 2 and 3.
+ *
+ *  1. Primitives  (--slate-500)       raw palette and scale values; never used in views
+ *  2. Semantic    (--color-surface)   meaning-based; these carry light/dark mode
+ *  3. Component   (--sidebar-w)       layout constants for one part of the shell
+ *
+ * Light/dark mode: `color-scheme: light dark` plus light-dark() pairs. With no
+ * override the OS preference wins. [data-theme] on <html> forces one scheme.
+ * Set color-scheme ONLY on :root. Vite 8 (Lightning CSS) compiles light-dark()
+ * into variables keyed off the root color-scheme, so per-element color-scheme
+ * changes do not work after build.
+ *
+ * Map primitives from the project's existing palette. They can stay in the
+ * project's original hex, since only the semantic tier is consumed.
+ * Values below are a neutral slate/blue default.
+ */
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* ---- 1. Primitives ------------------------------------------------ */
+    --slate-50: oklch(98.4% 0.003 247.9);
+    --slate-100: oklch(96.8% 0.007 247.9);
+    --slate-200: oklch(92.9% 0.013 255.5);
+    --slate-300: oklch(86.9% 0.022 252.9);
+    --slate-400: oklch(70.4% 0.04 256.8);
+    --slate-500: oklch(55.4% 0.046 257.4);
+    --slate-600: oklch(44.6% 0.043 257.3);
+    --slate-700: oklch(37.2% 0.044 257.3);
+    --slate-800: oklch(27.9% 0.041 260);
+    --slate-900: oklch(20.8% 0.042 265.8);
+    --slate-950: oklch(12.9% 0.042 264.7);
+
+    --blue-50: oklch(97% 0.014 254.6);
+    --blue-400: oklch(70.7% 0.165 254.6);
+    --blue-500: oklch(62.3% 0.214 259.8);
+    --blue-600: oklch(54.6% 0.245 262.9);
+
+    --green-100: oklch(96.2% 0.044 156.7);
+    --green-400: oklch(79.2% 0.209 151.7);
+    --green-700: oklch(52.7% 0.154 150.1);
+    --orange-100: oklch(95.4% 0.038 75.2);
+    --orange-400: oklch(75% 0.183 55.9);
+    --orange-700: oklch(55.3% 0.195 38.4);
+    --red-100: oklch(93.6% 0.032 17.7);
+    --red-400: oklch(70.4% 0.191 22.2);
+    --red-700: oklch(50.5% 0.213 27.5);
+
+    /* ---- 2. Semantic: color ------------------------------------------- */
+    /* Dark mode shows elevation by getting lighter, not by adding shadow:
+       bg is the darkest surface, then surface, then raised. */
+    --color-bg: light-dark(var(--slate-50), var(--slate-950));
+    --color-surface: light-dark(#fff, var(--slate-900));
+    --color-surface-raised: light-dark(#fff, var(--slate-800));
+    --color-surface-hover: light-dark(var(--slate-100), var(--slate-800));
+    --color-border: light-dark(var(--slate-200), var(--slate-800));
+    --color-border-strong: light-dark(var(--slate-300), var(--slate-700));
+
+    --color-text: light-dark(var(--slate-900), var(--slate-50));
+    --color-text-muted: light-dark(var(--slate-600), var(--slate-300));
+    --color-text-subtle: light-dark(var(--slate-500), var(--slate-400));
+
+    /* Accents get lighter in dark mode to keep contrast against dark surfaces */
+    --color-primary: light-dark(var(--blue-600), var(--blue-400));
+    --color-primary-hover: light-dark(var(--blue-500), var(--blue-500));
+    --color-primary-soft: light-dark(var(--blue-50), oklch(62.3% 0.214 259.8 / 16%));
+    --color-on-primary: light-dark(#fff, var(--slate-950));
+    --color-focus: var(--color-primary);
+
+    /* Status: a foreground for text and icons, plus a soft background for badges */
+    --color-success: light-dark(var(--green-700), var(--green-400));
+    --color-success-soft: light-dark(var(--green-100), oklch(79.2% 0.209 151.7 / 14%));
+    --color-warning: light-dark(var(--orange-700), var(--orange-400));
+    --color-warning-soft: light-dark(var(--orange-100), oklch(75% 0.183 55.9 / 14%));
+    --color-danger: light-dark(var(--red-700), var(--red-400));
+    --color-danger-soft: light-dark(var(--red-100), oklch(70.4% 0.191 22.2 / 14%));
+    --color-info: var(--color-primary);
+    --color-info-soft: var(--color-primary-soft);
+
+    /* Charts: SVG fills and strokes read these, never hex */
+    --chart-1: light-dark(var(--blue-600), var(--blue-400));
+    --chart-2: light-dark(oklch(60% 0.118 184.7), oklch(77.7% 0.152 181.9));
+    --chart-3: light-dark(oklch(66.6% 0.179 58.3), oklch(82.8% 0.189 84.4));
+    --chart-4: light-dark(oklch(51.1% 0.262 276.9), oklch(67.3% 0.182 276.9));
+    --chart-5: light-dark(oklch(59.2% 0.249 0.6), oklch(71.8% 0.202 349.8));
+    --chart-grid: var(--color-border);
+    --chart-axis: var(--color-text-subtle);
+
+    /* ---- 2. Semantic: type, space, shape, motion ---------------------- */
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --text-xs: 0.75rem;    /* 12 — table headers, captions */
+    --text-sm: 0.8125rem;  /* 13 — secondary labels */
+    --text-base: 0.875rem; /* 14 — body, controls */
+    --text-md: 1rem;       /* 16 */
+    --text-lg: 1.125rem;   /* 18 — card titles */
+    --text-xl: 1.5rem;     /* 24 — page titles */
+    --text-2xl: 1.75rem;   /* 28 — stat values */
+    --text-3xl: 2.25rem;   /* 36 — hero numbers */
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-full: 999px;
+
+    --shadow-sm: 0 1px 2px light-dark(oklch(0% 0 0 / 5%), oklch(0% 0 0 / 30%));
+    --shadow-lg: 0 12px 32px light-dark(oklch(20% 0.04 265 / 12%), oklch(0% 0 0 / 50%));
+
+    --duration: 200ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Control height: 36px for a mouse, 44px when the primary pointer is a finger */
+    --control-h: 2.25rem;
+
+    /* ---- 3. Component / layout ---------------------------------------- */
+    --sidebar-w: 15.5rem;
+    --topbar-h: 3.5rem;
+    --page-gutter: var(--space-4);
+
+    /* Stacking ladder. Dialogs and popovers render in the top layer, so they
+       need no z-index. Only sticky in-flow chrome is ranked here. */
+    --z-sticky: 10;
+    --z-topbar: 40;
+
+    /*
+     * Breakpoints. Media queries cannot read custom properties, so these are
+     * literal values; keep them in sync wherever they appear:
+     *   40rem (640px)   compact: shell padding steps up, top bar becomes sticky
+     *   64rem (1024px)  wide: persistent sidebar replaces the drawer
+     *                   (AppShell.vue CSS and NavDrawer.vue matchMedia)
+     * Inside page content, prefer container queries on `content`.
+     */
+  }
+
+  @media (width >= 40rem) {
+    :root {
+      --page-gutter: var(--space-8);
+    }
+  }
+
+  @media (pointer: coarse) {
+    :root {
+      --control-h: 2.75rem;
+    }
+  }
+
+  /* Explicit user choice; useTheme() sets this attribute, and so does the inline
+     script in index.html before first paint. No attribute means follow the OS. */
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+}
