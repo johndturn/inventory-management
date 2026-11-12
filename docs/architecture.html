@@ -148,10 +148,10 @@
   </header>
 
   <div class="stats">
-    <div class="stat"><div class="n">6</div><div class="l">Routed views</div></div>
-    <div class="stat"><div class="n">14</div><div class="l">API endpoints (all GET)</div></div>
+    <div class="stat"><div class="n">7</div><div class="l">Routed views</div></div>
+    <div class="stat"><div class="n">22</div><div class="l">API endpoints</div></div>
     <div class="stat"><div class="n">7</div><div class="l">JSON data files</div></div>
-    <div class="stat"><div class="n">40</div><div class="l">Backend pytest tests</div></div>
+    <div class="stat"><div class="n">123</div><div class="l">Backend pytest tests</div></div>
   </div>
 
   <!-- System architecture -->
@@ -304,7 +304,7 @@
   <!-- Endpoints -->
   <section>
     <h2>API surface</h2>
-    <p class="lede">Every endpoint is a read. Highlighted filters are the ones each endpoint accepts.</p>
+    <p class="lede">Highlighted filters are the ones each endpoint accepts. Writes (restocking orders, tasks, purchase orders) are kept in memory and reset when the server restarts.</p>
     <div class="card flush table-wrap">
       <table>
         <thead><tr><th>Endpoint</th><th>Filters</th><th>Consumed by</th></tr></thead>
@@ -317,7 +317,11 @@
           <tr><td><code>/api/demand</code></td><td><span class="pill">none</span></td><td>Demand</td></tr>
           <tr><td><code>/api/backlog</code></td><td><span class="pill">none</span></td><td>Dashboard, Backlog</td></tr>
           <tr><td><code>/api/spending/summary · monthly · categories · transactions</code></td><td><span class="pill">none</span></td><td>Spending</td></tr>
-          <tr><td><code>/api/reports/quarterly · monthly-trends</code></td><td><span class="pill">none</span></td><td>Reports (direct axios call)</td></tr>
+          <tr><td><code>/api/reports/quarterly · monthly-trends</code></td><td><span class="pill on">warehouse</span><span class="pill on">category</span><span class="pill on">status</span><span class="pill on">month</span></td><td>Reports</td></tr>
+          <tr><td><code>/api/restocking/recommendations</code></td><td><span class="pill on">budget</span></td><td>Restocking</td></tr>
+          <tr><td><code>GET · POST /api/restocking/orders</code></td><td><span class="pill">none</span></td><td>Restocking, Orders</td></tr>
+          <tr><td><code>GET · POST · PATCH · DELETE /api/tasks</code></td><td><span class="pill">none</span></td><td>Tasks modal (App.vue)</td></tr>
+          <tr><td><code>POST /api/purchase-orders · GET /api/purchase-orders/{backlog_item_id}</code></td><td><span class="pill">none</span></td><td>Dashboard shortages</td></tr>
         </tbody>
       </table>
     </div>
@@ -347,7 +351,7 @@
         <p style="margin:0 0 6px"><strong>Warehouses</strong><br><span style="color:var(--muted)">San Francisco, London, Tokyo</span></p>
         <p style="margin:0 0 6px"><strong>Categories</strong><br><span style="color:var(--muted)">Circuit Boards, Sensors, Actuators, Controllers, Power Supplies</span></p>
         <p style="margin:0 0 6px"><strong>Order status</strong><br><span style="color:var(--muted)">Processing, Backordered, Shipped, Delivered</span></p>
-        <p style="margin:0"><strong>Time period</strong><br><span style="color:var(--muted)">2025 months or quarters. Applies to orders only; inventory has no date dimension.</span></p>
+        <p style="margin:0"><strong>Time period</strong><br><span style="color:var(--muted)">A month (<code>YYYY-MM</code>) or quarter (<code>Qn-YYYY</code>, any year). Applies to orders only; inventory has no date dimension.</span></p>
       </div>
     </div>
   </section>
@@ -357,11 +361,10 @@
     <h2>Things to know</h2>
     <p class="lede">Found while reading the code and checking it against the running API.</p>
     <div class="notes">
-      <div class="note"><span class="tag gap">Gap</span><div><strong>Task endpoints don't exist</strong><p><code>App.vue</code> calls <code>GET/POST/PATCH/DELETE /api/tasks</code>, but the server has no such routes (404). Errors are caught and logged, so the Tasks modal only shows the hard-coded tasks from <code>useAuth.js</code>.</p></div></div>
-      <div class="note"><span class="tag gap">Gap</span><div><strong>Purchase-order endpoints don't exist</strong><p><code>api.js</code> defines <code>createPurchaseOrder</code> and <code>getPurchaseOrderByBacklogItem</code>, and the server has a <code>PurchaseOrder</code> model, but there are no routes for them. <code>/api/backlog</code> still reads <code>purchase_orders.json</code> to set <code>has_purchase_order</code>.</p></div></div>
-      <div class="note"><span class="tag watch">Watch</span><div><strong>Backlog view is not routed</strong><p><code>views/Backlog.vue</code> exists but isn't registered in <code>main.js</code>. Backlog data is shown on the Dashboard instead.</p></div></div>
-      <div class="note"><span class="tag watch">Watch</span><div><strong>Reports bypasses api.js</strong><p><code>Reports.vue</code> imports axios and hard-codes <code>http://localhost:8001</code>. The base URL is also hard-coded in <code>api.js</code>, so both need changing to point anywhere else.</p></div></div>
-      <div class="note"><span class="tag watch">Watch</span><div><strong>Dates are hard-wired to 2025</strong><p><code>QUARTER_MAP</code> and the quarterly report logic only recognise 2025. <code>total_backlog_items</code> in the dashboard summary ignores all filters.</p></div></div>
+      <div class="note"><span class="tag watch">Watch</span><div><strong>Writes live in memory only</strong><p>Tasks, purchase orders and restocking orders are held in server memory and reset when the server restarts. That keeps the demo stateless, but nothing survives a restart.</p></div></div>
+      <div class="note"><span class="tag watch">Watch</span><div><strong>Backlog view is not routed</strong><p><code>views/Backlog.vue</code> exists but is intentionally not registered in <code>main.js</code>. Backlog data is shown on the Dashboard instead.</p></div></div>
+      <div class="note"><span class="tag watch">Watch</span><div><strong>Backlog count ignores filters</strong><p><code>total_backlog_items</code> in the dashboard summary can't be filtered: backlog items have no warehouse or category, and their SKUs aren't in <code>inventory.json</code> to join against.</p></div></div>
+      <div class="note"><span class="tag watch">Watch</span><div><strong>API base URL is hard-coded</strong><p><code>api.js</code> points at <code>http://localhost:8001</code>. Every view now goes through it, so this is the one place to change.</p></div></div>
       <div class="note"><span class="tag info">Note</span><div><strong>Demo-grade security</strong><p>CORS allows all origins with credentials, and the user profile is a client-side mock. That's fine for a local demo, not for deployment.</p></div></div>
     </div>
   </section>
