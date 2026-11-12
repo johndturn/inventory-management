@@ -1,5 +1,8 @@
 import math
+import re
 import threading
+import uuid
+from typing import Literal
 from datetime import date, timedelta
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
@@ -12,29 +15,33 @@ from mock_data import inventory_items, orders, demand_forecasts, backlog_items, 
 
 app = FastAPI(title="Factory Inventory Management System")
 
-# Quarter mapping for date filtering
-QUARTER_MAP = {
-    'Q1-2025': ['2025-01', '2025-02', '2025-03'],
-    'Q2-2025': ['2025-04', '2025-05', '2025-06'],
-    'Q3-2025': ['2025-07', '2025-08', '2025-09'],
-    'Q4-2025': ['2025-10', '2025-11', '2025-12']
-}
+QUARTER_PATTERN = re.compile(r'^Q([1-4])-(\d{4})$')
+
+def quarter_of(order_date: str) -> Optional[str]:
+    """Return 'Qn-YYYY' for an ISO date string, or None if it can't be parsed.
+
+    Derived from the date itself so any year works (this used to be a lookup
+    table hard-coded to 2025, which silently dropped orders from other years).
+    """
+    match = re.match(r'^(\d{4})-(\d{2})', order_date or '')
+    if not match:
+        return None
+    year, month = match.group(1), int(match.group(2))
+    if not 1 <= month <= 12:
+        return None
+    return f"Q{(month - 1) // 3 + 1}-{year}"
 
 def filter_by_month(items: list, month: Optional[str]) -> list:
-    """Filter items by month/quarter based on order_date field"""
+    """Filter items by month ('YYYY-MM') or quarter ('Qn-YYYY') using order_date."""
     if not month or month == 'all':
         return items
 
-    if month.startswith('Q'):
-        # Handle quarters
-        if month in QUARTER_MAP:
-            months = QUARTER_MAP[month]
-            return [item for item in items if any(m in item.get('order_date', '') for m in months)]
-    else:
-        # Direct month match
-        return [item for item in items if month in item.get('order_date', '')]
+    if QUARTER_PATTERN.match(month):
+        return [item for item in items if quarter_of(item.get('order_date', '')) == month]
 
-    return items
+    # Direct month match on the date prefix (startswith, not substring, so
+    # '2025-01' can't match a day component elsewhere in the string)
+    return [item for item in items if item.get('order_date', '').startswith(month)]
 
 def apply_filters(items: list, warehouse: Optional[str] = None, category: Optional[str] = None,
                  status: Optional[str] = None) -> list:
@@ -132,14 +139,6 @@ class PurchaseOrder(BaseModel):
     expected_delivery_date: str
     status: str
     created_date: str
-    notes: Optional[str] = None
-
-class CreatePurchaseOrderRequest(BaseModel):
-    backlog_item_id: str
-    supplier_name: str
-    quantity: int
-    unit_cost: float
-    expected_delivery_date: str
     notes: Optional[str] = None
 
 class RecommendationItem(BaseModel):
@@ -413,82 +412,202 @@ def get_recent_transactions():
     """Get recent transactions"""
     return recent_transactions
 
-@app.get("/api/reports/quarterly")
-def get_quarterly_reports():
-    """Get quarterly performance reports"""
-    # Calculate quarterly statistics from orders
+class QuarterlyReport(BaseModel):
+    quarter: str
+    total_orders: int
+    total_revenue: float
+    delivered_orders: int
+    avg_order_value: float
+    fulfillment_rate: float
+
+class MonthlyTrend(BaseModel):
+    month: str
+    order_count: int
+    revenue: float
+    delivered_count: int
+
+def filtered_orders(warehouse, category, status, month) -> list:
+    """Orders after the global filter bar's filters, shared by the report endpoints."""
+    return filter_by_month(apply_filters(orders, warehouse, category, status), month)
+
+@app.get("/api/reports/quarterly", response_model=List[QuarterlyReport])
+def get_quarterly_reports(
+    warehouse: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    month: Optional[str] = None
+):
+    """Get quarterly performance reports, honouring the global filters"""
     quarters = {}
 
-    for order in orders:
-        order_date = order.get('order_date', '')
-        # Determine quarter
-        if '2025-01' in order_date or '2025-02' in order_date or '2025-03' in order_date:
-            quarter = 'Q1-2025'
-        elif '2025-04' in order_date or '2025-05' in order_date or '2025-06' in order_date:
-            quarter = 'Q2-2025'
-        elif '2025-07' in order_date or '2025-08' in order_date or '2025-09' in order_date:
-            quarter = 'Q3-2025'
-        elif '2025-10' in order_date or '2025-11' in order_date or '2025-12' in order_date:
-            quarter = 'Q4-2025'
-        else:
+    for order in filtered_orders(warehouse, category, status, month):
+        quarter = quarter_of(order.get('order_date', ''))
+        if quarter is None:
             continue
 
-        if quarter not in quarters:
-            quarters[quarter] = {
-                'quarter': quarter,
-                'total_orders': 0,
-                'total_revenue': 0,
-                'delivered_orders': 0,
-                'avg_order_value': 0
-            }
-
-        quarters[quarter]['total_orders'] += 1
-        quarters[quarter]['total_revenue'] += order.get('total_value', 0)
+        data = quarters.setdefault(quarter, {
+            'quarter': quarter,
+            'total_orders': 0,
+            'total_revenue': 0.0,
+            'delivered_orders': 0,
+        })
+        data['total_orders'] += 1
+        data['total_revenue'] += order.get('total_value', 0)
         if order.get('status') == 'Delivered':
-            quarters[quarter]['delivered_orders'] += 1
+            data['delivered_orders'] += 1
 
-    # Calculate averages and fulfillment rate
     result = []
-    for q, data in quarters.items():
-        if data['total_orders'] > 0:
-            data['avg_order_value'] = round(data['total_revenue'] / data['total_orders'], 2)
-            data['fulfillment_rate'] = round((data['delivered_orders'] / data['total_orders']) * 100, 1)
+    for data in quarters.values():
+        # Every quarter in the dict has at least one order, so no divide-by-zero
+        data['total_revenue'] = round(data['total_revenue'], 2)
+        data['avg_order_value'] = round(data['total_revenue'] / data['total_orders'], 2)
+        data['fulfillment_rate'] = round(data['delivered_orders'] / data['total_orders'] * 100, 1)
         result.append(data)
 
-    # Sort by quarter
-    result.sort(key=lambda x: x['quarter'])
+    # Chronological, not alphabetical: as strings 'Q1-2026' would sort before 'Q2-2025'
+    result.sort(key=lambda q: (q['quarter'][3:], q['quarter'][1]))
     return result
 
-@app.get("/api/reports/monthly-trends")
-def get_monthly_trends():
-    """Get month-over-month trends"""
+@app.get("/api/reports/monthly-trends", response_model=List[MonthlyTrend])
+def get_monthly_trends(
+    warehouse: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    month: Optional[str] = None
+):
+    """Get month-over-month trends, honouring the global filters"""
     months = {}
 
-    for order in orders:
+    for order in filtered_orders(warehouse, category, status, month):
         order_date = order.get('order_date', '')
-        if not order_date:
+        if not re.match(r'^\d{4}-\d{2}', order_date):
             continue
 
-        # Extract month (format: YYYY-MM-DD)
-        month = order_date[:7]  # Gets YYYY-MM
-
-        if month not in months:
-            months[month] = {
-                'month': month,
-                'order_count': 0,
-                'revenue': 0,
-                'delivered_count': 0
-            }
-
-        months[month]['order_count'] += 1
-        months[month]['revenue'] += order.get('total_value', 0)
+        key = order_date[:7]  # YYYY-MM; ISO strings sort chronologically
+        data = months.setdefault(key, {'month': key, 'order_count': 0, 'revenue': 0.0, 'delivered_count': 0})
+        data['order_count'] += 1
+        data['revenue'] += order.get('total_value', 0)
         if order.get('status') == 'Delivered':
-            months[month]['delivered_count'] += 1
+            data['delivered_count'] += 1
 
-    # Convert to list and sort
-    result = list(months.values())
-    result.sort(key=lambda x: x['month'])
+    result = sorted(months.values(), key=lambda m: m['month'])
+    for data in result:
+        data['revenue'] = round(data['revenue'], 2)
     return result
+
+# ---- Tasks ------------------------------------------------------------------
+# The client's task list (TasksModal) merges built-in demo tasks with these.
+# Field names are camelCase (dueDate) because that's the client's existing shape.
+
+class Task(BaseModel):
+    id: str
+    title: str
+    priority: Literal['high', 'medium', 'low']
+    dueDate: str
+    status: Literal['pending', 'completed']
+
+class CreateTaskRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    priority: Literal['high', 'medium', 'low'] = 'medium'
+    dueDate: date
+
+# In memory only, reset on restart (like restocking orders)
+tasks: List[dict] = []
+tasks_lock = threading.Lock()
+
+@app.get("/api/tasks", response_model=List[Task])
+def get_tasks():
+    """Get user-created tasks, newest first"""
+    return tasks
+
+@app.post("/api/tasks", response_model=Task, status_code=201)
+def create_task(request: CreateTaskRequest):
+    """Create a task"""
+    title = request.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Task title cannot be blank")
+    # String ids with a prefix so they can never collide with the client's numeric
+    # demo-task ids, which App.vue uses to decide whether a task lives on the server
+    task = {
+        'id': f"task-{uuid.uuid4().hex[:12]}",
+        'title': title,
+        'priority': request.priority,
+        'dueDate': request.dueDate.isoformat(),
+        'status': 'pending',
+    }
+    with tasks_lock:
+        tasks.insert(0, task)
+    return task
+
+@app.patch("/api/tasks/{task_id}", response_model=Task)
+def toggle_task(task_id: str):
+    """Toggle a task between pending and completed"""
+    with tasks_lock:
+        task = next((t for t in tasks if t['id'] == task_id), None)
+        if not task:
+            raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+        task['status'] = 'completed' if task['status'] == 'pending' else 'pending'
+        return task
+
+@app.delete("/api/tasks/{task_id}", status_code=204)
+def delete_task(task_id: str):
+    """Delete a task"""
+    with tasks_lock:
+        index = next((i for i, t in enumerate(tasks) if t['id'] == task_id), None)
+        if index is None:
+            raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+        tasks.pop(index)
+
+# ---- Purchase orders (for backlog shortages) ---------------------------------
+purchase_orders_lock = threading.Lock()
+
+class PurchaseOrderInput(BaseModel):
+    """Request body for creating a purchase order."""
+    backlog_item_id: str
+    supplier_name: str = Field(min_length=1, max_length=200)
+    quantity: int = Field(gt=0)
+    unit_cost: float = Field(gt=0, allow_inf_nan=False)
+    expected_delivery_date: date
+    notes: Optional[str] = Field(default=None, max_length=1000)
+
+@app.post("/api/purchase-orders", response_model=PurchaseOrder, status_code=201)
+def create_purchase_order(request: PurchaseOrderInput):
+    """Create a purchase order for a backlog item (one per item)"""
+    if not any(item['id'] == request.backlog_item_id for item in backlog_items):
+        raise HTTPException(status_code=404, detail=f"Backlog item {request.backlog_item_id} not found")
+    supplier = request.supplier_name.strip()
+    if not supplier:
+        raise HTTPException(status_code=400, detail="Supplier name cannot be blank")
+    if request.expected_delivery_date < date.today():
+        raise HTTPException(status_code=400, detail="Expected delivery date cannot be in the past")
+
+    with purchase_orders_lock:
+        # The dashboard shows one PO per shortage ("Create PO" becomes "View PO")
+        if any(po['backlog_item_id'] == request.backlog_item_id for po in purchase_orders):
+            raise HTTPException(status_code=409, detail=f"Backlog item {request.backlog_item_id} already has a purchase order")
+        po = {
+            'id': f"PO-{uuid.uuid4().hex[:8].upper()}",
+            'backlog_item_id': request.backlog_item_id,
+            'supplier_name': supplier,
+            'quantity': request.quantity,
+            'unit_cost': round(request.unit_cost, 2),
+            'expected_delivery_date': request.expected_delivery_date.isoformat(),
+            'status': 'Pending',
+            'created_date': date.today().isoformat(),
+            'notes': (request.notes or '').strip() or None,
+        }
+        # Appends to the list loaded from purchase_orders.json (in memory only), so
+        # /api/backlog's has_purchase_order flag picks it up immediately
+        purchase_orders.append(po)
+    return po
+
+@app.get("/api/purchase-orders/{backlog_item_id}", response_model=PurchaseOrder)
+def get_purchase_order_by_backlog_item(backlog_item_id: str):
+    """Get the purchase order for a backlog item"""
+    po = next((po for po in purchase_orders if po['backlog_item_id'] == backlog_item_id), None)
+    if not po:
+        raise HTTPException(status_code=404, detail=f"No purchase order for backlog item {backlog_item_id}")
+    return po
 
 if __name__ == "__main__":
     import uvicorn

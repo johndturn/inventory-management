@@ -127,6 +127,8 @@
   }
 
   .stat-card {
+    /* Size container so .stat-value can scale with the card (see below) */
+    container-type: inline-size;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -152,7 +154,9 @@
 
   .stat-value {
     margin-block-start: var(--space-2);
-    font-size: var(--text-3xl);
+    /* Yen totals run to 14 characters (¥4,675,027,964) and overflowed at a fixed
+       36px. Scale with the card's width, within the existing type scale. */
+    font-size: clamp(var(--text-xl), 11cqi, var(--text-3xl));
     font-weight: 700;
     letter-spacing: -0.025em;
     font-variant-numeric: tabular-nums;
@@ -572,6 +576,16 @@
     }
 
     .stat-value {
+      font-size: clamp(var(--text-md), 11cqi, var(--text-xl));
+    }
+
+    /* For grids of long values (yen totals reach 14 characters): one per row on
+       narrow screens, since two-up leaves ~128px, too little at a readable size */
+    .stats-grid--wide {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .stats-grid--wide .stat-value {
       font-size: var(--text-xl);
     }
 

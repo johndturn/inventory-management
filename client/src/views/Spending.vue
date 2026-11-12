@@ -11,7 +11,7 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
       <!-- Revenue & Financial KPIs -->
-      <div class="stats-grid">
+      <div class="stats-grid stats-grid--wide">
         <div class="stat-card revenue-card">
           <div class="stat-label">{{ t('finance.totalRevenue') }}</div>
           <div class="stat-value">{{ formatCurrency(revenueMetrics.totalRevenue) }}</div>
@@ -49,17 +49,17 @@
         <div class="chart-container">
           <div class="bar-chart" role="img" :aria-label="t('finance.revenueVsCosts.title')">
             <div class="y-axis" aria-hidden="true">
-              <span>{{ currencySymbol }}{{ maxRevenueValue }}K</span>
-              <span>{{ currencySymbol }}{{ Math.round(maxRevenueValue * 0.75) }}K</span>
-              <span>{{ currencySymbol }}{{ Math.round(maxRevenueValue * 0.5) }}K</span>
-              <span>{{ currencySymbol }}{{ Math.round(maxRevenueValue * 0.25) }}K</span>
-              <span>{{ currencySymbol }}0</span>
+              <span>{{ formatAxis(maxRevenueValue * 1000) }}</span>
+              <span>{{ formatAxis(maxRevenueValue * 750) }}</span>
+              <span>{{ formatAxis(maxRevenueValue * 500) }}</span>
+              <span>{{ formatAxis(maxRevenueValue * 250) }}</span>
+              <span>{{ formatAxis(0) }}</span>
             </div>
             <div class="chart-area">
               <div v-for="month in monthlyRevenue" :key="month.month" class="bar-group-revenue">
                 <div class="revenue-bars">
-                  <div class="revenue-bar" :style="{ height: getRevenueBarHeight(month.revenue) + '%' }" :title="`Revenue: ${currencySymbol}${month.revenue.toLocaleString()}`"></div>
-                  <div class="cost-bar" :style="{ height: getRevenueBarHeight(month.costs) + '%' }" :title="`Costs: ${currencySymbol}${month.costs.toLocaleString()}`"></div>
+                  <div class="revenue-bar" :style="{ height: getRevenueBarHeight(month.revenue) + '%' }" :title="`Revenue: ${formatCurrency(month.revenue)}`"></div>
+                  <div class="cost-bar" :style="{ height: getRevenueBarHeight(month.costs) + '%' }" :title="`Costs: ${formatCurrency(month.costs)}`"></div>
                 </div>
                 <span class="bar-label">{{ translateMonth(month.month) }}</span>
               </div>
@@ -83,12 +83,12 @@
           <!-- role="group", not "img": each month's stacked bar is a button and must stay exposed -->
           <div class="bar-chart" role="group" :aria-label="t('finance.monthlyCostFlow.title')">
             <div class="y-axis" aria-hidden="true">
-              <span>{{ currencySymbol }}25K</span>
-              <span>{{ currencySymbol }}20K</span>
-              <span>{{ currencySymbol }}15K</span>
-              <span>{{ currencySymbol }}10K</span>
-              <span>{{ currencySymbol }}5K</span>
-              <span>{{ currencySymbol }}0</span>
+              <span>{{ formatAxis(25000) }}</span>
+              <span>{{ formatAxis(20000) }}</span>
+              <span>{{ formatAxis(15000) }}</span>
+              <span>{{ formatAxis(10000) }}</span>
+              <span>{{ formatAxis(5000) }}</span>
+              <span>{{ formatAxis(0) }}</span>
             </div>
             <div class="chart-area">
               <div v-for="month in monthlySpending" :key="month.month" class="bar-group">
@@ -98,10 +98,10 @@
                   :aria-label="`${translateMonth(month.month)} - ${t('finance.monthlyCostFlow.title')}`"
                   @click="showCostDetail(month)"
                 >
-                  <span class="bar-segment procurement" :style="{ height: getBarHeight(month.procurement) + '%' }" :title="`Procurement: ${currencySymbol}${month.procurement.toLocaleString()}`"></span>
-                  <span class="bar-segment operational" :style="{ height: getBarHeight(month.operational) + '%' }" :title="`Operational: ${currencySymbol}${month.operational.toLocaleString()}`"></span>
-                  <span class="bar-segment labor" :style="{ height: getBarHeight(month.labor) + '%' }" :title="`Labor: ${currencySymbol}${month.labor.toLocaleString()}`"></span>
-                  <span class="bar-segment overhead" :style="{ height: getBarHeight(month.overhead) + '%' }" :title="`Overhead: ${currencySymbol}${month.overhead.toLocaleString()}`"></span>
+                  <span class="bar-segment procurement" :style="{ height: getBarHeight(month.procurement) + '%' }" :title="`Procurement: ${formatCurrency(month.procurement)}`"></span>
+                  <span class="bar-segment operational" :style="{ height: getBarHeight(month.operational) + '%' }" :title="`Operational: ${formatCurrency(month.operational)}`"></span>
+                  <span class="bar-segment labor" :style="{ height: getBarHeight(month.labor) + '%' }" :title="`Labor: ${formatCurrency(month.labor)}`"></span>
+                  <span class="bar-segment overhead" :style="{ height: getBarHeight(month.overhead) + '%' }" :title="`Overhead: ${formatCurrency(month.overhead)}`"></span>
                 </button>
                 <span class="bar-label">{{ translateMonth(month.month) }}</span>
               </div>
@@ -120,7 +120,7 @@
             <div v-for="category in categorySpending" :key="category.category" class="category-item">
               <div class="category-info">
                 <div class="category-name">{{ translateCategory(category.category) }}</div>
-                <div class="category-amount">{{ currencySymbol }}{{ category.amount.toLocaleString() }}</div>
+                <div class="category-amount">{{ formatCurrency(category.amount) }}</div>
               </div>
               <div class="category-bar-container">
                 <div class="category-bar" :style="{ width: category.percentage + '%' }"></div>
@@ -161,7 +161,7 @@
                   <td class="transaction-description">{{ transaction.description }}</td>
                   <td>{{ transaction.vendor }}</td>
                   <td class="transaction-date"><time :datetime="transaction.date">{{ formatDateShort(transaction.date) }}</time></td>
-                  <td class="num transaction-amount">{{ currencySymbol }}{{ transaction.amount.toLocaleString() }}</td>
+                  <td class="num transaction-amount">{{ formatCurrency(transaction.amount) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -175,6 +175,12 @@
       :cost-data="selectedCostData"
       @close="showCostModal = false"
     />
+
+    <TransactionDetailModal
+      :is-open="showTransactionModal"
+      :transaction="selectedTransaction"
+      @close="showTransactionModal = false"
+    />
   </div>
 </template>
 
@@ -183,13 +189,15 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
-import { formatCurrency as formatCurrencyUtil } from '../utils/currency'
+import { formatCurrency as formatCurrencyUtil, formatCurrencyCompact } from '../utils/currency'
 import CostDetailModal from '../components/CostDetailModal.vue'
+import TransactionDetailModal from '../components/TransactionDetailModal.vue'
 
 export default {
   name: 'Spending',
   components: {
-    CostDetailModal
+    CostDetailModal,
+    TransactionDetailModal
   },
   setup() {
     const { t, currentCurrency } = useI18n()
@@ -204,6 +212,8 @@ export default {
     // Modal state
     const showCostModal = ref(false)
     const selectedCostData = ref(null)
+    const showTransactionModal = ref(false)
+    const selectedTransaction = ref(null)
 
     // Use shared filters
     const { selectedPeriod, getCurrentFilters } = useFilters()
@@ -386,9 +396,10 @@ export default {
       return formatCurrencyUtil(value, currentCurrency.value)
     }
 
-    const currencySymbol = computed(() => {
-      return currentCurrency.value === 'JPY' ? '¥' : '$'
-    })
+    // Axis labels take full USD amounts; the util converts to JPY and abbreviates
+    const formatAxis = (usdAmount) => {
+      return formatCurrencyCompact(usdAmount, currentCurrency.value)
+    }
 
     const getBarHeight = (value) => {
       const maxValue = 25000
@@ -455,8 +466,8 @@ export default {
     }
 
     const handleTransactionClick = (transaction) => {
-      console.log('Transaction clicked:', transaction)
-      alert(`Transaction Details:\n\nID: ${transaction.id}\nDescription: ${transaction.description}\nVendor: ${transaction.vendor}\nDate: ${formatDateShort(transaction.date)}\nAmount: $${transaction.amount.toLocaleString()}`)
+      selectedTransaction.value = transaction
+      showTransactionModal.value = true
     }
 
     const showCostDetail = (monthData) => {
@@ -481,7 +492,7 @@ export default {
       monthlyRevenue,
       maxRevenueValue,
       formatCurrency,
-      currencySymbol,
+      formatAxis,
       getBarHeight,
       getRevenueBarHeight,
       formatDate,
@@ -489,6 +500,8 @@ export default {
       translateMonth,
       translateCategory,
       handleTransactionClick,
+      showTransactionModal,
+      selectedTransaction,
       showCostModal,
       selectedCostData,
       showCostDetail,

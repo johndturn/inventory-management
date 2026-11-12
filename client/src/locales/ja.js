@@ -27,6 +27,80 @@ export default {
     language: '言語'
   },
 
+  // レポート
+  reports: {
+    title: 'パフォーマンスレポート',
+    description: '四半期ごとの実績指標と月次推移',
+    loading: 'レポートを読み込み中...',
+    loadFailed: 'レポートの読み込みに失敗しました',
+    empty: '現在のフィルターに一致する注文はありません',
+    quarterlyPerformance: '四半期実績',
+    monthlyRevenueTrend: '月次収益推移',
+    monthOverMonth: '前月比分析',
+    chartLabel: '月次収益の棒グラフ（{count}か月）。同じ値を下の表に記載しています。',
+    quarterLabel: '{year}年 第{quarter}四半期',
+    notApplicable: '該当なし',
+    table: {
+      quarter: '四半期',
+      totalOrders: '注文総数',
+      totalRevenue: '総収益',
+      avgOrderValue: '平均注文額',
+      fulfillmentRate: '履行率',
+      month: '月',
+      orders: '注文数',
+      revenue: '収益',
+      change: '増減額',
+      growthRate: '成長率'
+    },
+    summary: {
+      totalRevenue: '総収益',
+      avgMonthlyRevenue: '月平均収益',
+      totalOrders: '注文総数',
+      bestQuarter: '最も好調な四半期'
+    }
+  },
+
+  // 不足品の発注書（ダッシュボード）
+  purchaseOrder: {
+    actions: '操作',
+    create: '発注書作成',
+    view: '発注書を表示',
+    createTitle: '発注書の作成',
+    viewTitle: '発注書',
+    item: '品目',
+    shortage: '不足数',
+    supplier: '仕入先',
+    supplierPlaceholder: '仕入先名',
+    quantity: '数量',
+    unitCost: '単価',
+    expectedDelivery: '納品予定日',
+    notes: '備考',
+    notesPlaceholder: '仕入先への備考（任意）',
+    total: '合計',
+    submit: '発注書を作成',
+    submitting: '作成中...',
+    poNumber: '発注番号',
+    status: 'ステータス',
+    createdDate: '作成日',
+    statusPending: '保留中',
+    loading: '発注書を読み込み中...',
+    loadFailed: '発注書を読み込めませんでした',
+    createFailed: '発注書を作成できませんでした'
+  },
+
+  // 支出取引の詳細ダイアログ
+  transactionDetails: {
+    title: '取引の詳細',
+    id: '取引ID',
+    description: '内容',
+    vendor: '取引先',
+    category: 'カテゴリ',
+    warehouse: '倉庫',
+    type: '種別',
+    date: '日付',
+    amount: '金額'
+  },
+
   // Dashboard
   dashboard: {
     title: '概要',
