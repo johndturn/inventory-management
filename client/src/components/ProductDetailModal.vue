@@ -48,7 +48,7 @@
           </div>
           <div>
             <dt class="detail-label">Total Revenue</dt>
-            <dd class="detail-value">{{ currencySymbol }}{{ product.revenue.toLocaleString() }}</dd>
+            <dd class="detail-value">{{ formatCurrency(product.revenue, currentCurrency) }}</dd>
           </div>
           <div>
             <dt class="detail-label">Current Stock</dt>
@@ -86,12 +86,9 @@
 <script setup>
 import { computed, ref, watch, onMounted, useId } from 'vue'
 import { useI18n } from '../composables/useI18n'
+import { formatCurrency } from '../utils/currency'
 
 const { t, currentCurrency } = useI18n()
-
-const currencySymbol = computed(() => {
-  return currentCurrency.value === 'JPY' ? '¥' : '$'
-})
 
 const props = defineProps({
   isOpen: {

@@ -19,7 +19,7 @@
       <div class="modal-body">
         <div class="summary-card">
           <div class="summary-label">Total Costs</div>
-          <div class="summary-value">{{ currencySymbol }}{{ totalCosts.toLocaleString() }}</div>
+          <div class="summary-value">{{ formatCurrency(totalCosts, currentCurrency) }}</div>
         </div>
 
         <ul class="cost-breakdown" role="list">
@@ -32,7 +32,7 @@
               </div>
               <div class="cost-info">
                 <div class="cost-name">{{ item.label }}</div>
-                <div class="cost-amount">{{ currencySymbol }}{{ item.amount.toLocaleString() }}</div>
+                <div class="cost-amount">{{ formatCurrency(item.amount, currentCurrency) }}</div>
               </div>
             </div>
             <div class="cost-percentage">{{ item.percentage }}% of total</div>
@@ -50,6 +50,7 @@
 <script>
 import { ref, computed, watch, onMounted, useId } from 'vue'
 import { useI18n } from '../composables/useI18n'
+import { formatCurrency } from '../utils/currency'
 
 export default {
   name: 'CostDetailModal',
@@ -68,10 +69,6 @@ export default {
     const { t, currentCurrency } = useI18n()
     const titleId = useId()
     const dialogEl = ref(null)
-
-    const currencySymbol = computed(() => {
-      return currentCurrency.value === 'JPY' ? '¥' : '$'
-    })
 
     const totalCosts = computed(() => {
       if (!props.costData) return 0
@@ -150,7 +147,8 @@ export default {
       t,
       titleId,
       dialogEl,
-      currencySymbol,
+      currentCurrency,
+      formatCurrency,
       totalCosts,
       costItems,
       onClose,

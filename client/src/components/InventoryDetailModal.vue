@@ -71,13 +71,13 @@
 
           <div>
             <dt class="detail-label">Unit Cost</dt>
-            <dd class="detail-value">{{ currencySymbol }}{{ inventoryItem.unit_cost.toFixed(2) }}</dd>
+            <dd class="detail-value">{{ formatCurrencyWithDecimals(inventoryItem.unit_cost, currentCurrency, 2) }}</dd>
           </div>
 
           <div>
             <dt class="detail-label">Total Value</dt>
             <dd class="detail-value total-value">
-              {{ currencySymbol }}{{ totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+              {{ formatCurrencyWithDecimals(totalValue, currentCurrency, 2) }}
             </dd>
           </div>
 
@@ -107,12 +107,9 @@
 <script setup>
 import { computed, ref, watch, onMounted, useId } from 'vue'
 import { useI18n } from '../composables/useI18n'
+import { formatCurrencyWithDecimals } from '../utils/currency'
 
 const { t, currentCurrency, translateProductName, translateWarehouse } = useI18n()
-
-const currencySymbol = computed(() => {
-  return currentCurrency.value === 'JPY' ? '¥' : '$'
-})
 
 const props = defineProps({
   isOpen: {

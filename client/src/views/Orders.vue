@@ -111,7 +111,7 @@
                       <!-- An order can list the same SKU twice, so sku alone is not unique; position disambiguates -->
                       <div v-for="(item, idx) in order.items" :key="`${item.sku}-${idx}`" class="item-entry">
                         <span class="item-name">{{ translateProductName(item.name) }}</span>
-                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ currencySymbol }}{{ item.unit_price }}</span>
+                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ formatCurrencyWithDecimals(item.unit_price, currentCurrency, 2) }}</span>
                       </div>
                     </div>
                   </details>
@@ -123,7 +123,7 @@
                 </td>
                 <td class="col-date"><time :datetime="order.order_date">{{ formatDate(order.order_date) }}</time></td>
                 <td class="col-date"><time :datetime="order.expected_delivery">{{ formatDate(order.expected_delivery) }}</time></td>
-                <td class="col-value num"><strong>{{ currencySymbol }}{{ order.total_value.toLocaleString() }}</strong></td>
+                <td class="col-value num"><strong>{{ formatCurrencyWithDecimals(order.total_value, currentCurrency, 2) }}</strong></td>
               </tr>
             </tbody>
           </table>
@@ -145,9 +145,6 @@ export default {
   setup() {
     const { t, currentCurrency, translateProductName, translateCustomerName } = useI18n()
 
-    const currencySymbol = computed(() => {
-      return currentCurrency.value === 'JPY' ? '¥' : '$'
-    })
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
@@ -242,7 +239,6 @@ export default {
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
-      currencySymbol,
       currentCurrency,
       restockingOrders,
       restockingError,

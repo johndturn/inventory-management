@@ -27,6 +27,80 @@ export default {
     language: 'Language'
   },
 
+  // Reports
+  reports: {
+    title: 'Performance Reports',
+    description: 'Quarterly performance metrics and monthly trends',
+    loading: 'Loading reports...',
+    loadFailed: 'Failed to load reports',
+    empty: 'No orders match the current filters',
+    quarterlyPerformance: 'Quarterly Performance',
+    monthlyRevenueTrend: 'Monthly Revenue Trend',
+    monthOverMonth: 'Month-over-Month Analysis',
+    chartLabel: 'Monthly revenue bar chart, {count} months. The table below lists the same values.',
+    quarterLabel: 'Q{quarter} {year}',
+    notApplicable: 'N/A',
+    table: {
+      quarter: 'Quarter',
+      totalOrders: 'Total Orders',
+      totalRevenue: 'Total Revenue',
+      avgOrderValue: 'Avg Order Value',
+      fulfillmentRate: 'Fulfillment Rate',
+      month: 'Month',
+      orders: 'Orders',
+      revenue: 'Revenue',
+      change: 'Change',
+      growthRate: 'Growth Rate'
+    },
+    summary: {
+      totalRevenue: 'Total Revenue',
+      avgMonthlyRevenue: 'Avg Monthly Revenue',
+      totalOrders: 'Total Orders',
+      bestQuarter: 'Best Performing Quarter'
+    }
+  },
+
+  // Purchase orders for backlog shortages (Dashboard)
+  purchaseOrder: {
+    actions: 'Actions',
+    create: 'Create PO',
+    view: 'View PO',
+    createTitle: 'Create Purchase Order',
+    viewTitle: 'Purchase Order',
+    item: 'Item',
+    shortage: 'Shortage',
+    supplier: 'Supplier',
+    supplierPlaceholder: 'Supplier name',
+    quantity: 'Quantity',
+    unitCost: 'Unit Cost',
+    expectedDelivery: 'Expected Delivery',
+    notes: 'Notes',
+    notesPlaceholder: 'Optional notes for the supplier',
+    total: 'Total',
+    submit: 'Create Purchase Order',
+    submitting: 'Creating...',
+    poNumber: 'PO Number',
+    status: 'Status',
+    createdDate: 'Created',
+    statusPending: 'Pending',
+    loading: 'Loading purchase order...',
+    loadFailed: 'Could not load the purchase order',
+    createFailed: 'Could not create the purchase order'
+  },
+
+  // Spending transaction detail dialog
+  transactionDetails: {
+    title: 'Transaction Details',
+    id: 'Transaction ID',
+    description: 'Description',
+    vendor: 'Vendor',
+    category: 'Category',
+    warehouse: 'Warehouse',
+    type: 'Type',
+    date: 'Date',
+    amount: 'Amount'
+  },
+
   // Dashboard
   dashboard: {
     title: 'Overview',
