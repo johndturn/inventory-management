@@ -1,280 +1,172 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click="close">
-        <div class="modal-container" @click.stop>
-          <div class="modal-header">
-            <h3 class="modal-title">{{ t('profileDetails.title') }}</h3>
-            <button class="close-button" @click="close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
+  <dialog
+    ref="dialogEl"
+    class="modal-container modal-container--sm"
+    :aria-labelledby="titleId"
+    @close="onClose"
+    @click="onDialogClick"
+  >
+    <div class="modal-header">
+      <h2 :id="titleId" class="modal-title">{{ t('profileDetails.title') }}</h2>
+      <button type="button" class="close-button" :aria-label="t('common.close')" @click="close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="profile-section">
+        <div class="avatar-section">
+          <div class="avatar-xl" aria-hidden="true">
+            {{ getInitials(currentUser.name) }}
           </div>
-
-          <div class="modal-body">
-            <div class="profile-section">
-              <div class="avatar-section">
-                <div class="avatar-xl">
-                  {{ getInitials(currentUser.name) }}
-                </div>
-                <h4 class="profile-name">{{ currentUser.name }}</h4>
-                <p class="profile-job-title">{{ currentUser.jobTitle }}</p>
-              </div>
-
-              <div class="info-grid">
-                <div class="info-item">
-                  <div class="info-label">{{ t('profileDetails.email') }}</div>
-                  <div class="info-value">{{ currentUser.email }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">{{ t('profileDetails.department') }}</div>
-                  <div class="info-value">{{ currentUser.department }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">{{ t('profileDetails.location') }}</div>
-                  <div class="info-value">{{ currentUser.location }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">{{ t('profileDetails.phone') }}</div>
-                  <div class="info-value">{{ currentUser.phone }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">{{ t('profileDetails.joinDate') }}</div>
-                  <div class="info-value">{{ formatDate(currentUser.joinDate) }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">{{ t('profileDetails.employeeId') }}</div>
-                  <div class="info-value">CC-{{ currentUser.id.toString().padStart(5, '0') }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="close">{{ t('profileDetails.close') }}</button>
-          </div>
+          <h3 class="profile-name">{{ currentUser.name }}</h3>
+          <p class="profile-job-title">{{ currentUser.jobTitle }}</p>
         </div>
+
+        <dl class="detail-grid">
+          <div class="info-item">
+            <dt class="detail-label">{{ t('profileDetails.email') }}</dt>
+            <dd class="detail-value">{{ currentUser.email }}</dd>
+          </div>
+          <div class="info-item">
+            <dt class="detail-label">{{ t('profileDetails.department') }}</dt>
+            <dd class="detail-value">{{ currentUser.department }}</dd>
+          </div>
+          <div class="info-item">
+            <dt class="detail-label">{{ t('profileDetails.location') }}</dt>
+            <dd class="detail-value">{{ currentUser.location }}</dd>
+          </div>
+          <div class="info-item">
+            <dt class="detail-label">{{ t('profileDetails.phone') }}</dt>
+            <dd class="detail-value">{{ currentUser.phone }}</dd>
+          </div>
+          <div class="info-item">
+            <dt class="detail-label">{{ t('profileDetails.joinDate') }}</dt>
+            <dd class="detail-value">{{ formatDate(currentUser.joinDate) }}</dd>
+          </div>
+          <div class="info-item">
+            <dt class="detail-label">{{ t('profileDetails.employeeId') }}</dt>
+            <dd class="detail-value">CC-{{ currentUser.id.toString().padStart(5, '0') }}</dd>
+          </div>
+        </dl>
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" @click="close">{{ t('profileDetails.close') }}</button>
+    </div>
+  </dialog>
 </template>
 
-<script setup>
+<script>
+import { ref, watch, onMounted, useId } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useI18n } from '../composables/useI18n'
 
-const { currentUser, getInitials } = useAuth()
-const { t, currentLocale } = useI18n()
+export default {
+  name: 'ProfileDetailsModal',
+  props: {
+    isOpen: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['close'],
+  setup(props, { emit }) {
+    const { currentUser, getInitials } = useAuth()
+    const { t, currentLocale } = useI18n()
 
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
+    const dialogEl = ref(null)
+    const titleId = `profile-title-${useId()}`
+
+    // Drive the native dialog from the isOpen prop; showModal() gives focus trap, Escape and inert page for free
+    watch(() => props.isOpen, (open) => {
+      const d = dialogEl.value
+      if (!d) return
+      if (open && !d.open) d.showModal()
+      else if (!open && d.open) d.close()
+    })
+    onMounted(() => {
+      if (props.isOpen) dialogEl.value?.showModal()
+    })
+
+    // The native 'close' event fires for Escape and dialog.close(); only tell the parent if it still thinks we're open
+    const onClose = () => {
+      if (props.isOpen) emit('close')
+    }
+
+    // Backdrop tap: clicks on the dialog element itself (not its children) are outside the content box
+    const onDialogClick = (e) => {
+      if (e.target === dialogEl.value) dialogEl.value.close()
+    }
+
+    const close = () => dialogEl.value?.close()
+
+    const formatDate = (dateString) => {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return ''
+      const locale = currentLocale.value === 'ja' ? 'ja-JP' : 'en-US'
+      return date.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    }
+
+    return { t, currentUser, getInitials, dialogEl, titleId, onClose, onDialogClick, close, formatDate }
   }
-})
-
-const emit = defineEmits(['close'])
-
-const close = () => {
-  emit('close')
-}
-
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  const locale = currentLocale.value === 'ja' ? 'ja-JP' : 'en-US'
-  return date.toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
 }
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 1rem;
-}
-
-.modal-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.15s ease;
-}
-
-.close-button:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
 .profile-section {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--space-6);
 }
 
 .avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  gap: var(--space-2);
+  padding-block-end: var(--space-5);
+  border-block-end: 1px solid var(--color-border);
 }
 
 .avatar-xl {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  inline-size: 6rem;
+  block-size: 6rem;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--text-3xl);
   font-weight: 700;
-  font-size: 2rem;
   letter-spacing: 0.025em;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .profile-name {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: #0f172a;
-  margin: 0;
 }
 
 .profile-job-title {
-  font-size: 1rem;
-  color: #64748b;
-  margin: 0;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  color: var(--color-text-muted);
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-1);
+  min-inline-size: 0;
 }
 
-.info-label {
-  font-size: 0.813rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-}
-
-.info-value {
-  font-size: 0.938rem;
-  color: #0f172a;
-  font-weight: 500;
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.btn-secondary {
-  padding: 0.625rem 1.25rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-}
-
-.btn-secondary:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-}
-
-/* Modal transition animations */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active .modal-container,
-.modal-leave-active .modal-container {
-  transition: transform 0.2s ease;
-}
-
-.modal-enter-from .modal-container,
-.modal-leave-to .modal-container {
-  transform: scale(0.95);
+.detail-value {
+  overflow-wrap: anywhere;
 }
 </style>

@@ -1,183 +1,87 @@
 <template>
-  <div class="language-switcher">
-    <button
-      class="language-button"
-      @click="toggleDropdown"
-      @blur="handleBlur"
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        class="globe-icon"
-      >
-        <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M3 10H17" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M10 3C10 3 7.5 5.5 7.5 10C7.5 14.5 10 17 10 17" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M10 3C10 3 12.5 5.5 12.5 10C12.5 14.5 10 17 10 17" stroke="currentColor" stroke-width="1.5"/>
+  <PopoverMenu :label="t('shell.language')">
+    <template #trigger>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18" />
       </svg>
-      <span class="language-label">{{ localeName }}</span>
-      <svg
-        class="chevron"
-        :class="{ 'chevron-open': isDropdownOpen }"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-      >
-        <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <span class="language-label truncate">{{ localeName }}</span>
+      <svg class="icon chevron" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 15l6-6 6 6" />
       </svg>
-    </button>
+    </template>
 
-    <div v-if="isDropdownOpen" class="dropdown-menu">
+    <template #default="{ close }">
       <button
         v-for="locale in availableLocales"
         :key="locale"
-        class="dropdown-item"
-        :class="{ active: currentLocale === locale }"
-        @mousedown.prevent="selectLanguage(locale)"
+        type="button"
+        class="popover-menu__item language-item"
+        :aria-current="currentLocale === locale ? 'true' : undefined"
+        @click="selectLanguage(locale, close)"
       >
         <span class="language-name">{{ getLanguageName(locale) }}</span>
-        <svg
-          v-if="currentLocale === locale"
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-          class="check-icon"
-        >
-          <path d="M4 9L7.5 12.5L14 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg v-if="currentLocale === locale" class="icon check-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12l5 5 9-10" />
         </svg>
       </button>
-    </div>
-  </div>
+    </template>
+  </PopoverMenu>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script>
 import { useI18n } from '../composables/useI18n'
-
-const { currentLocale, setLocale, availableLocales, localeName } = useI18n()
-
-const isDropdownOpen = ref(false)
+import PopoverMenu from './shell/PopoverMenu.vue'
 
 const languageNames = {
   en: 'English',
   ja: '日本語'
 }
 
-const getLanguageName = (locale) => {
-  return languageNames[locale] || locale
-}
+export default {
+  name: 'LanguageSwitcher',
+  components: { PopoverMenu },
+  setup() {
+    const { t, currentLocale, setLocale, availableLocales, localeName } = useI18n()
 
-const toggleDropdown = () => {
-  isDropdownOpen.value = !isDropdownOpen.value
-}
+    const getLanguageName = (locale) => languageNames[locale] || locale
 
-const handleBlur = () => {
-  // Delay to allow mousedown events on dropdown items to fire first
-  setTimeout(() => {
-    isDropdownOpen.value = false
-  }, 200)
-}
+    const selectLanguage = (locale, close) => {
+      setLocale(locale)
+      close()
+    }
 
-const selectLanguage = (locale) => {
-  setLocale(locale)
-  isDropdownOpen.value = false
+    return { t, currentLocale, availableLocales, localeName, getLanguageName, selectLanguage }
+  }
 }
 </script>
 
 <style scoped>
-.language-switcher {
-  position: relative;
-}
-
-.language-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  font-size: 0.875rem;
-  color: #334155;
-}
-
-.language-button:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-}
-
-.globe-icon {
-  color: #64748b;
-  flex-shrink: 0;
-}
-
 .language-label {
+  flex: 1;
+  min-inline-size: 0;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
 .chevron {
-  color: #64748b;
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
+  color: var(--color-text-subtle);
 }
 
-.chevron-open {
-  transform: rotate(180deg);
+.popover-menu__item .icon {
+  color: var(--color-text-muted);
 }
 
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  min-width: 160px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.dropdown-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
+.language-item {
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #334155;
 }
 
-.dropdown-item:hover {
-  background: #f8fafc;
+.language-item[aria-current='true'] {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
-.dropdown-item.active {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.language-name {
-  flex: 1;
-}
-
-.check-icon {
-  color: #2563eb;
-  flex-shrink: 0;
+.language-item[aria-current='true'] .icon {
+  color: var(--color-primary);
 }
 </style>
