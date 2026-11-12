@@ -1,0 +1,530 @@
+/*
+ * Dark mode as a floor terminal.
+ *
+ * Factory inventory and ERP systems ran on IBM 5250 "green screen" terminals:
+ * phosphor-green text on true black, high-intensity white for what matters,
+ * and a small fixed set of semantic colors (turquoise, yellow, red). Dark mode
+ * borrows that vernacular; light mode is untouched.
+ *
+ * Every rule is scoped to :root[data-scheme='dark'] (set before first paint in
+ * index.html and kept current by useTheme). This file is unlayered on purpose:
+ * Vue <style scoped> blocks are unlayered too and would beat any @layer, so the
+ * skin instead wins on specificity, :root[data-scheme] adds (0,2,0) to beat the
+ * scoped [data-v-…] selectors without !important.
+ *
+ * Fidelity rule: motion never touches data. Numbers are never scrambled,
+ * counted up or delayed; only titles, chart marks and containers animate, and
+ * prefers-reduced-motion (base.css) turns all of it off.
+ */
+
+/* ---- Tokens: the dark half of the system, replaced ------------------------ */
+:root[data-scheme='dark'] {
+  /* Phosphor palette. Contrast on #000: ink 16.2, white 19.0, muted 10.8,
+     subtle 6.6, turquoise 11.4, yellow 13.2, red 7.6, green 12.3 (all :1) */
+  --term-black: #000000;
+  --term-ink: #b4f0be;        /* body text: soft phosphor green */
+  --term-white: #eef6ec;      /* high intensity: headings, key values */
+  --term-ink-muted: #86c995;
+  --term-ink-subtle: #5f9e6e;
+  --term-turquoise: #45d3cc;  /* interactive / info */
+  --term-yellow: #f2c94c;
+  --term-red: #ff6b6b;
+  --term-green: #4be07f;      /* success */
+  --term-line: #1e3d27;       /* decorative rules */
+  --term-line-strong: #2f6a3e; /* control outlines, 3.25:1 */
+  --term-glow: #0c1f12;       /* hover / selected rows */
+
+  --color-bg: var(--term-black);
+  --color-surface: var(--term-black);
+  --color-surface-raised: var(--term-black);
+  --color-surface-hover: var(--term-glow);
+  --color-surface-sunken: #050d07;
+  --color-border: var(--term-line);
+  --color-border-strong: var(--term-line-strong);
+
+  --color-text: var(--term-ink);
+  --color-text-muted: var(--term-ink-muted);
+  --color-text-subtle: var(--term-ink-subtle);
+  --color-heading: var(--term-white);
+
+  --color-primary: var(--term-turquoise);
+  --color-primary-hover: #7fe6e0;
+  --color-primary-soft: rgb(69 211 204 / 14%);
+  --color-on-primary: var(--term-black);
+  --color-focus: var(--term-turquoise);
+
+  --color-success: var(--term-green);
+  --color-success-soft: rgb(75 224 127 / 12%);
+  --color-on-success-soft: var(--term-green);
+  --color-warning: var(--term-yellow);
+  --color-warning-soft: rgb(242 201 76 / 12%);
+  --color-on-warning-soft: var(--term-yellow);
+  --color-danger: var(--term-red);
+  --color-danger-soft: rgb(255 107 107 / 14%);
+  --color-on-danger-soft: var(--term-red);
+  --color-danger-bg: rgb(255 107 107 / 8%);
+  --color-info: var(--term-turquoise);
+  --color-info-soft: rgb(69 211 204 / 12%);
+  --color-on-info-soft: var(--term-turquoise);
+
+  /* Chart marks, validated on #000 (dataviz validator, --pairs all): lightness
+     band, chroma floor, normal-vision ΔE 17.0, contrast >= 3:1 all pass; worst
+     CVD ΔE 7.6 (deutan) sits in the 6-8 band, legal because every chart here
+     also has a legend plus printed values. Order = shipped, delivered,
+     processing, backordered, as in the light palette. */
+  --chart-1: #037ac0;
+  --chart-2: #29ac68;
+  --chart-3: #bb881a;
+  --chart-4: #af2843;
+  --chart-5: #6f8f78;  /* neutral single-series bars */
+  --chart-track: var(--term-glow);
+
+  --font-sans: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Per-glyph fallback: Latin from VT323, Japanese from DotGothic16 */
+  --font-display: 'VT323', 'DotGothic16', ui-monospace, monospace;
+
+  /* Terminals have no rounded corners or drop shadows */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-full: 0;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+
+  /* Stepped timing: motion moves in visible pixel increments, not glides */
+  --term-steps: steps(8, end);
+}
+
+/* ---- Base ------------------------------------------------------------------ */
+:root[data-scheme='dark'] body {
+  /* Mono reads larger than the sans it replaces; 13px keeps table widths sane */
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  /* Japanese: never start a line with ー or small kana. Inherited everywhere and
+     a no-op for Latin text, so no :lang() hook is needed (<html lang> isn't
+     updated on locale switch yet, see inv-ebv.2). */
+  line-break: strict;
+}
+
+:root[data-scheme='dark'] :is(h1, h2, h3, h4) {
+  color: var(--color-heading);
+  letter-spacing: 0;
+}
+
+:root[data-scheme='dark'] ::selection {
+  background: var(--term-ink);
+  color: var(--term-black);
+}
+
+/* No focus rule here on purpose: base.css already draws the ring from
+   --color-focus (turquoise in this skin). An unlayered :focus-visible would
+   beat every layered focus style, e.g. bring back the ring components.css
+   removes from dialogs themselves. */
+
+:root[data-scheme='dark'] * {
+  scrollbar-color: var(--term-line-strong) var(--term-black);
+}
+
+/* Faint CRT scanlines over the whole page. 1.8% white every 3px: present on
+   large black areas, invisible behind text. Dialogs and popovers render in the
+   top layer, above this, so their content is never lined. */
+:root[data-scheme='dark'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483647;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 1.8%) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* ---- Shell ----------------------------------------------------------------- */
+:root[data-scheme='dark'] .brand__name {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0;
+  color: var(--color-heading);
+  /* Japanese: never start a line with ー or small kana (触媒コンポ / ーネンツ) */
+  line-break: strict;
+  text-wrap: balance;
+}
+
+:root[data-scheme='dark'] .brand__subtitle {
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  color: var(--color-text-subtle);
+}
+
+/* Current page in reverse video, the 5250 field-cursor highlight */
+:root[data-scheme='dark'] .sidebar-nav__link[aria-current='page'] {
+  background: var(--term-ink);
+  color: var(--term-black);
+}
+
+:root[data-scheme='dark'] .sidebar-nav__link:not([aria-current='page']):hover {
+  background: var(--term-glow);
+  color: var(--color-heading);
+}
+
+/* ---- Page header: the one orchestrated moment ------------------------------ */
+:root[data-scheme='dark'] .page-header h1 {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 400;
+  line-height: 1;
+  /* Types itself in: a stepped left-to-right reveal reads as characters landing */
+  /* backwards, not both: a lingering clip-path would clip glyphs that overhang the box */
+  animation: term-type 520ms steps(18, end) backwards;
+}
+
+/* Block cursor after the title: blinks a few times, then rests solid */
+:root[data-scheme='dark'] .page-header h1::after {
+  content: '';
+  display: inline-block;
+  inline-size: 0.5em;
+  block-size: 0.78em;
+  margin-inline-start: 0.12em;
+  vertical-align: -0.04em;
+  background: var(--term-ink);
+  animation: term-blink 1s steps(1, end) 520ms 4 both;
+}
+
+:root[data-scheme='dark'] .page-header p {
+  color: var(--color-text-subtle);
+  font-size: var(--text-base);
+}
+
+@keyframes term-type {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes term-blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Group headings ("Key performance indicators") as a prompt line */
+:root[data-scheme='dark'] .section-title {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+
+:root[data-scheme='dark'] .section-title::before {
+  content: '> ';
+  content: '> ' / '';
+  color: var(--color-primary);
+}
+
+/* ---- Panels: title set into the top border, like a terminal window --------- */
+:root[data-scheme='dark'] :is(.card, .stat-card) {
+  border-color: var(--term-line-strong);
+}
+
+:root[data-scheme='dark'] .card {
+  position: relative;
+}
+
+:root[data-scheme='dark'] .card > .card-header {
+  border-block-end: 1px dashed var(--term-line);
+  justify-content: flex-end;
+}
+
+:root[data-scheme='dark'] .card > .card-header > .card-title {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: var(--space-3);
+  translate: 0 -50%;
+  padding-inline: 1ch;
+  background: var(--term-black);
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  /* Set into the border, so it can't wrap; a long (e.g. Japanese) title in a
+     narrow card truncates instead of running past the card edge */
+  max-inline-size: calc(100% - 2 * var(--space-3));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A header holding only the title has nothing left in flow: collapse it */
+:root[data-scheme='dark'] .card > .card-header:has(> .card-title:only-child) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-block-size: 0;
+}
+
+/* Flush (table) cards: keep the column headings clear of the inset title */
+:root[data-scheme='dark'] .card--flush {
+  padding-block-start: var(--space-4);
+}
+
+:root[data-scheme='dark'] .card--flush > .card-header:has(> .card-title:only-child) {
+  padding: 0;
+}
+
+:root[data-scheme='dark'] .card--flush > .card-header:not(:has(> .card-title:only-child)) {
+  padding-block-start: 0;
+}
+
+/* ---- Stats: big pixel numerals ---------------------------------------------- */
+:root[data-scheme='dark'] .stat-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+}
+
+:root[data-scheme='dark'] .stat-value {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  /* Measured: VT323 digits advance 0.4em and caps are 0.56em tall (Plex: 0.70),
+     so the pixel face needs a bigger em to read at the same weight. The longest
+     value, a 14-character yen total, is 5.6em wide; 17cqi keeps it inside the
+     card (17 x 5.6 = 95% of the content box) at every card width. */
+  font-size: clamp(2rem, 17cqi, 3.75rem);
+  color: var(--color-heading);
+}
+
+/* Donut total: same pixel numerals as the stat cards */
+:root[data-scheme='dark'] .donut-center-value {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 400;
+  fill: var(--color-heading);
+  /* The SVG positions this baseline for the old 36px face; the taller pixel
+     numerals need it lower to clear the "Total" label above */
+  translate: 0 8px;
+}
+
+:root[data-scheme='dark'] .donut-center-label {
+  letter-spacing: 0.04em;
+}
+
+:root[data-scheme='dark'] .stat-card:hover {
+  border-color: var(--term-ink-subtle);
+}
+
+/* ---- Tables ------------------------------------------------------------------ */
+:root[data-scheme='dark'] th {
+  background: var(--term-black);
+  color: var(--color-text-subtle);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  vertical-align: bottom;
+}
+
+/* Monospace headings like "QUANTITY AVAILABLE" are wide; held on one line they
+   propped columns open and squeezed free-text columns (item names wrapped to
+   three lines). Let headings wrap instead; values still never wrap. Only on
+   wide content: this file is unlayered, so it would also beat the layered
+   narrow-screen rule in components.css that keeps cells on one line and lets
+   the table scroll. Matching that rule's breakpoint here preserves it. */
+@container content (width >= 40rem) {
+  :root[data-scheme='dark'] th {
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
+
+:root[data-scheme='dark'] td {
+  border-block-start: 1px dashed var(--term-line);
+  color: var(--color-text);
+}
+
+:root[data-scheme='dark'] :is(td > strong, th[scope='row'], .row-link) {
+  color: var(--color-heading);
+}
+
+:root[data-scheme='dark'] .row-link:hover {
+  color: var(--color-primary);
+}
+
+/* ---- Badges: bracketed status codes, no fill -------------------------------- */
+/* .partial-tag is Restocking's "Partial" marker: same treatment, so every
+   status-like label on screen reads as one system */
+:root[data-scheme='dark'] :is(.badge, .partial-tag) {
+  background: transparent;
+  padding-inline: 0;
+  gap: 0.25ch;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+:root[data-scheme='dark'] .partial-tag {
+  color: var(--color-warning);
+}
+
+:root[data-scheme='dark'] :is(.badge, .partial-tag)::before {
+  content: '[';
+  content: '[' / '';
+}
+
+:root[data-scheme='dark'] :is(.badge, .partial-tag)::after {
+  content: ']';
+  content: ']' / '';
+}
+
+/* ---- Controls --------------------------------------------------------------- */
+:root[data-scheme='dark'] :is(.btn, .btn-secondary) {
+  background: transparent;
+  border-color: var(--term-line-strong);
+  color: var(--color-text);
+}
+
+:root[data-scheme='dark'] :is(.btn, .btn-secondary):hover:not(:disabled) {
+  background: var(--term-ink);
+  border-color: var(--term-ink);
+  color: var(--term-black);
+}
+
+:root[data-scheme='dark'] :is(.btn--primary, .btn-primary) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+:root[data-scheme='dark'] :is(.btn--primary, .btn-primary):hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: var(--color-on-primary);
+}
+
+/* Primary actions repeated on every table row (Dashboard "Create PO") read as a
+   solid turquoise column. In rows they become outlined and invert on hover;
+   page-level primaries (Restocking "Place Order") stay solid. */
+:root[data-scheme='dark'] td :is(.btn--primary, .btn-primary) {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+:root[data-scheme='dark'] td :is(.btn--primary, .btn-primary):hover:not(:disabled) {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+:root[data-scheme='dark'] :is(.input, .select, input:not([type='range'], [type='checkbox'], [type='radio']), select, textarea) {
+  background: var(--term-black);
+  border-color: var(--term-line-strong);
+  color: var(--color-heading);
+}
+
+:root[data-scheme='dark'] :is(.input, input, textarea)::placeholder {
+  color: var(--color-text-subtle);
+}
+
+/* ---- Feedback ------------------------------------------------------------------ */
+/* Decorative spinner: the "/ ''" alt text keeps screen readers from announcing
+   "slash", "vertical line" on every frame (plain declaration first as fallback) */
+:root[data-scheme='dark'] .loading::after {
+  content: ' |';
+  content: ' |' / '';
+  animation: term-spin 480ms steps(1, end) infinite;
+}
+
+@keyframes term-spin {
+  0% { content: ' |' / ''; }
+  25% { content: ' /' / ''; }
+  50% { content: ' -' / ''; }
+  75% { content: ' \\' / ''; }
+}
+
+:root[data-scheme='dark'] :is(.alert, .error) {
+  background: transparent;
+}
+
+:root[data-scheme='dark'] .alert--success {
+  border-color: var(--color-success);
+}
+
+:root[data-scheme='dark'] :is(.error, .alert--danger) {
+  border-color: var(--color-danger);
+}
+
+/* ---- Dialogs and menus: CRT power-on ---------------------------------------- */
+:root[data-scheme='dark'] dialog.modal-container {
+  border: 3px double var(--term-line-strong);
+  /* Opens from a horizontal line in pixel steps, like a tube warming up */
+  clip-path: inset(0);
+  opacity: 1;
+  scale: 1;
+  transition:
+    clip-path 240ms steps(6, end),
+    overlay 240ms allow-discrete,
+    display 240ms allow-discrete;
+
+  @starting-style {
+    &[open] {
+      clip-path: inset(49.5% 0 49.5% 0);
+    }
+  }
+
+  &:not([open]) {
+    clip-path: inset(49.5% 0 49.5% 0);
+  }
+
+  &::backdrop {
+    background: rgb(0 0 0 / 78%);
+    backdrop-filter: none;
+  }
+}
+
+:root[data-scheme='dark'] :is(.modal-header, .modal-footer) {
+  border-color: var(--term-line);
+}
+
+:root[data-scheme='dark'] .modal-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+:root[data-scheme='dark'] .popover-menu__panel {
+  border: 1px solid var(--term-line-strong);
+  background: var(--term-black);
+}
+
+/* ---- Charts: marks draw in pixel steps -------------------------------------- */
+/* Only on arrival at a page: [data-route-enter] is set by the router for a
+   moment after each navigation (main.js). Views remount their content on every
+   filter change (v-if="loading"), so without this gate the reveal replayed and
+   hid the chart for ~0.5s on each filter change, i.e. data arriving late.
+   The Dashboard category bars (.h-bar) deliberately don't animate: their
+   printed value lives inside the bar, and any grow would squash or hide it. */
+
+/* Goal meters (empty bars, no text inside) grow from their start edge */
+:root[data-scheme='dark'][data-route-enter] .kpi-progress {
+  transform-origin: left center;
+  animation: term-grow-x 480ms var(--term-steps) backwards;
+}
+
+/* Column charts are revealed bottom-up as a whole, so stacked segments keep
+   their proportions at every step */
+:root[data-scheme='dark'][data-route-enter] .bar-chart {
+  /* backwards, not both: a lingering inset(0) clipped the rotated month labels */
+  animation: term-rise 480ms var(--term-steps) backwards;
+}
+
+@keyframes term-grow-x {
+  from { transform: scaleX(0); }
+}
+
+@keyframes term-rise {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}

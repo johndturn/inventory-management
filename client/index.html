@@ -7,14 +7,22 @@
   <!-- Tells the browser both schemes are supported before CSS loads -->
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>Factory Inventory Management System</title>
   <script>
     // Apply a saved theme before first paint so the page never flashes the
     // wrong one. Keep the key and values in sync with composables/useTheme.js.
+    // data-theme = the user's explicit choice (absent = follow the OS).
+    // data-scheme = the scheme actually showing, so styles that differ by more
+    // than color (the dark "terminal" skin) need one selector, not two.
+    // Storage gets its own try: blocked site data must still fall through to the
+    // OS check below, or a system-dark user would flash light then terminal.
+    var saved = null
+    try { saved = localStorage.getItem('theme') } catch (e) {}
     try {
-      var saved = localStorage.getItem('theme')
       if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved
+      var dark = saved === 'dark' || (saved !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)
+      document.documentElement.dataset.scheme = dark ? 'dark' : 'light'
     } catch (e) {}
   </script>
 </head>

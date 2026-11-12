@@ -55,6 +55,20 @@ const router = createRouter({
   ]
 })
 
+// Mark "just arrived on a page" for a moment after each navigation. The dark
+// terminal skin plays its chart reveal only under this flag (terminal.css):
+// views remount their content on every filter change, and replaying the reveal
+// then would hide data that is already there. 1.2s covers a normal data load;
+// if the API is slower the chart simply appears without the reveal.
+const ROUTE_ENTER_MS = 1200
+let routeEnterTimer
+router.afterEach(() => {
+  const root = document.documentElement
+  root.dataset.routeEnter = ''
+  clearTimeout(routeEnterTimer)
+  routeEnterTimer = setTimeout(() => delete root.dataset.routeEnter, ROUTE_ENTER_MS)
+})
+
 const app = createApp(App)
 app.use(router)
 app.mount('#app')
